@@ -43,13 +43,13 @@ fit_once <- function(case, data, seed) {
     precision = 1,
     nbins = case$nbins
   )
-  if ("max_n_var" %in% names(formals(boostPM::boosting))) {
+  if ("max_n_var" %in% names(formals(boostPM::fit_boostpm))) {
     arguments$max_n_var <- case$d
   }
 
   set.seed(seed)
   invisible(utils::capture.output(
-    fit <- do.call(boostPM::boosting, arguments)
+    fit <- do.call(boostPM::fit_boostpm, arguments)
   ))
   fit
 }

@@ -96,12 +96,21 @@ fit_fixture <- function(fixture) {
   }
 
   set.seed(fixture$fit_seed)
-  invisible(capture.output(fit <- do.call(boosting, fit_arguments)))
+  fit_function <- if (implementation == "package") fit_boostpm else boosting
+  invisible(capture.output(fit <- do.call(fit_function, fit_arguments)))
   fit_rng <- .Random.seed
 
-  density <- eval_density_b(fit, fixture$eval_points)
+  density <- if (implementation == "package") {
+    stats::predict(fit, fixture$eval_points, type = "details")
+  } else {
+    eval_density_b(fit, fixture$eval_points)
+  }
   set.seed(fixture$simulation_seed)
-  simulation <- simulation_b(fit, 11L)
+  simulation <- if (implementation == "package") {
+    stats::simulate(fit, nsim = 11L)
+  } else {
+    simulation_b(fit, 11L)
+  }
   simulation_rng <- .Random.seed
 
   list(

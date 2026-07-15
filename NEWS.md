@@ -1,5 +1,8 @@
 # boostPM 0.0.0.9000
 
+* Renamed the primary public API to `fit_boostpm()`, `predict()`, and
+  `simulate()`. The former `boosting()`, `eval_density_b()`, and
+  `simulation_b()` functions remain as deprecated compatibility wrappers.
 * Added R-side validation for public fitting, simulation, and density-evaluation
   inputs.
 * Enforced approved parameter domains: `0 < c0 < 1`, `gamma >= 0`,

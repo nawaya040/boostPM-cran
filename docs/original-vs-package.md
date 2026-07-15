@@ -58,9 +58,11 @@ numerical algorithm had been intentionally changed.
 **confirmed by direct comparison on 2026-07-14**
 
 The archived `boosting_functions.R` was divided into `R/preprocessing.R`,
-`R/controls.R`, `R/boosting.R`, and `R/postprocessing.R`. Public function names,
-arguments, defaults, low-level argument order, returned content, console output,
-and the start point of elapsed-time measurement were retained.
+`R/controls.R`, `R/boosting.R`, and `R/postprocessing.R`. Defaults, low-level
+argument order, returned content, console output, and the start point of
+elapsed-time measurement were retained. The current primary API is
+`fit_boostpm()`, `predict()`, and `simulate()`; the archived public names remain
+available as deprecated compatibility wrappers.
 
 A fixed-seed direct comparison found identical preprocessing results, C++ call
 arguments, returned content excluding elapsed time, and final R random-number

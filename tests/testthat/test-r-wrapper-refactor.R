@@ -61,7 +61,7 @@ testthat::test_that("refactored controls preserve archived forwarding", {
   ))
 })
 
-testthat::test_that("public fit wrapper preserves low-level argument order", {
+testthat::test_that("public fit API preserves low-level argument order", {
   recorded <- new.env(parent = emptyenv())
   testthat::local_mocked_bindings(
     do_boosting = function(...) {
@@ -77,7 +77,7 @@ testthat::test_that("public fit wrapper preserves low-level argument order", {
     byrow = TRUE
   )
   output <- capture.output(
-    fit <- boostPM::boosting(data, add_noise = FALSE)
+    fit <- boostPM::fit_boostpm(data, add_noise = FALSE)
   )
 
   expected_scaled <- matrix(
@@ -95,7 +95,7 @@ testthat::test_that("public fit wrapper preserves low-level argument order", {
   testthat::expect_true(any(grepl("Time difference", output, fixed = TRUE)))
 })
 
-testthat::test_that("post-processing wrappers preserve argument order", {
+testthat::test_that("S3 post-processing methods preserve argument order", {
   recorded <- new.env(parent = emptyenv())
   testthat::local_mocked_bindings(
     simulation = function(tree_list, size_simulation, support) {
@@ -113,10 +113,11 @@ testthat::test_that("post-processing wrappers preserve argument order", {
     tree_list = list("tree"),
     Omega = matrix(c(0, 1), nrow = 1L)
   )
+  class(fit) <- c("boostPM_fit", "list")
   points <- matrix(c(0.2, 0.8), ncol = 1L)
 
-  simulated <- boostPM::simulation_b(fit, 2L)
-  density <- boostPM::eval_density_b(fit, points)
+  simulated <- stats::simulate(fit, nsim = 2L)
+  density <- stats::predict(fit, points, type = "details")
 
   testthat::expect_identical(recorded$simulation, list(
     fit$tree_list, 2L, fit$Omega

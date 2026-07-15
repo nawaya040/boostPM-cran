@@ -15,6 +15,6 @@
 #' @aliases boostPM
 #' @useDynLib boostPM, .registration = TRUE
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats runif
+#' @importFrom stats predict runif simulate
 #' @md
 "_PACKAGE"

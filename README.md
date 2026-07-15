@@ -34,7 +34,7 @@ data <- cbind(
 support <- cbind(c(0, 0), c(1, 1))
 
 set.seed(2)
-fit <- boosting(
+fit <- fit_boostpm(
   data,
   add_noise = FALSE,
   Omega = support,
@@ -47,11 +47,11 @@ fit <- boosting(
   nbins = 4
 )
 
-evaluated <- eval_density_b(fit, data)
-exp(evaluated$log_densities)
+log_density <- predict(fit, data, type = "log_density")
+exp(log_density)
 
 set.seed(3)
-simulated <- simulation_b(fit, 10)
+simulated <- simulate(fit, nsim = 10)
 ```
 
 The fit is a `boostPM_fit` object whose list components include serialized
@@ -63,8 +63,8 @@ trees, residuals, support, and variable-importance diagnostics.
 - Constant columns are rejected.
 - A supplied `Omega` has one lower and upper bound per variable. Training data
   must be strictly inside those bounds.
-- `eval_density_b()` returns log density. Evaluation outside `Omega` returns
-  `-Inf`.
+- `predict(fit, newdata, type = "log_density")` returns log density.
+  Evaluation outside `Omega` returns `-Inf`.
 - Fits and simulation use R's random-number generator. Call `set.seed()`
   before each stochastic operation when reproducibility is needed.
 

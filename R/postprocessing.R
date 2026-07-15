@@ -1,53 +1,72 @@
-#' Simulate from a Fitted boostPM Model
+#' Simulate from a Fitted boostPM Distribution
 #'
 #' Draws samples from the probability distribution represented by a fitted
 #' tree ensemble.
 #'
-#' @param list_boosting A fitted object returned by [boosting()].
-#' @param size Non-negative integer. Number of observations to simulate.
+#' @param object A fitted object returned by [fit_boostpm()].
+#' @param nsim Non-negative integer. Number of observations to simulate.
+#' @param seed Either `NULL`, or a non-negative integer used to set R's random
+#'   number generator immediately before simulation.
+#' @param ... Unused. Additional arguments are an error.
 #'
-#' @return A numeric matrix with `size` rows and one column per fitted
+#' @return A numeric matrix with `nsim` rows and one column per fitted
 #'   variable.
 #'
 #' @details
-#' The routine uses R's random-number generator. Calling [set.seed()] before
-#' simulation supports reproducibility within a fixed R runtime.
+#' With `seed = NULL`, randomness is controlled by calling [set.seed()] before
+#' `simulate()`. Supplying `seed` sets R's random-number generator and changes
+#' its subsequent state.
 #'
 #' @examples
 #' fit <- list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1))
-#' set.seed(1)
-#' simulation_b(fit, 3)
+#' class(fit) <- c("boostPM_fit", "list")
+#' simulate(fit, nsim = 3, seed = 1)
 #'
 #' @export
 #' @md
-simulation_b <- function(list_boosting, size) {
-  .boostpm_validate_fit_object(list_boosting)
-  .boostpm_validate_simulation_size(size)
+simulate.boostPM_fit <- function(object, nsim = 1L, seed = NULL, ...) {
+  extra_arguments <- list(...)
+  if (length(extra_arguments) > 0L) {
+    .boostpm_stop_invalid("`...` must be empty for `simulate.boostPM_fit()`.")
+  }
+
+  .boostpm_validate_fit_object(object)
+  .boostpm_validate_simulation_size(nsim)
+
+  if (!is.null(seed)) {
+    .boostpm_validate_count(seed, "seed", minimum = 0L)
+    set.seed(as.integer(seed))
+  }
 
   simulation(
-    list_boosting$tree_list,
-    size,
-    list_boosting$Omega
+    object$tree_list,
+    nsim,
+    object$Omega
   )
 }
 
-#' Evaluate a Fitted boostPM Log Density
+#' Evaluate a Fitted boostPM Density
 #'
-#' Evaluates the log density represented by a fitted tree ensemble at supplied
-#' points.
+#' Evaluates the probability density represented by a fitted tree ensemble at
+#' supplied points.
 #'
-#' @param list_boosting A fitted object returned by [boosting()].
-#' @param eval_points A finite numeric matrix with evaluation points in rows
-#'   and one column per fitted variable.
+#' @param object A fitted object returned by [fit_boostpm()].
+#' @param newdata A finite numeric matrix with evaluation points in rows and
+#'   one column per fitted variable.
+#' @param type Character string selecting the return value: `"log_density"`
+#'   returns log densities, `"density"` returns densities, and `"details"`
+#'   returns the legacy list containing log densities and the cumulative mean
+#'   log-density path.
+#' @param ... Unused. Additional arguments are an error.
 #'
-#' @return A list with two components: `log_densities`, the log density for
-#'   each row of `eval_points`; and `mean_log_dens_path`, the cumulative mean
-#'   log-density path after each fitted tree.
+#' @return For `type = "log_density"` or `type = "density"`, a numeric vector
+#'   with one entry per row of `newdata`. For `type = "details"`, a list with
+#'   components `log_densities` and `mean_log_dens_path`.
 #'
 #' @details
-#' Points outside the fitted rectangular support receive log density `-Inf`.
-#' At a split point, the evaluation follows the left-child convention used in
-#' the method specification.
+#' Points outside the fitted rectangular support receive log density `-Inf` and
+#' density zero. At a split point, evaluation follows the left-child convention
+#' in the method specification.
 #'
 #' @examples
 #' fit <- list(
@@ -58,53 +77,100 @@ simulation_b <- function(list_boosting, size) {
 #'   )),
 #'   Omega = matrix(c(0, 1), nrow = 1)
 #' )
-#' eval_density_b(fit, matrix(c(0.25, 0.75), ncol = 1))
+#' class(fit) <- c("boostPM_fit", "list")
+#' predict(fit, matrix(c(0.25, 0.75), ncol = 1), type = "log_density")
 #'
 #' @export
 #' @md
-eval_density_b <- function(list_boosting, eval_points) {
-  .boostpm_validate_fit_object(list_boosting)
-  .boostpm_validate_eval_points(eval_points, nrow(list_boosting$Omega))
+predict.boostPM_fit <- function(object,
+                                newdata,
+                                type = c("log_density", "density", "details"),
+                                ...) {
+  extra_arguments <- list(...)
+  if (length(extra_arguments) > 0L) {
+    .boostpm_stop_invalid("`...` must be empty for `predict.boostPM_fit()`.")
+  }
+
+  type <- match.arg(type)
+  .boostpm_validate_fit_object(object)
+  .boostpm_validate_eval_points(newdata, nrow(object$Omega))
 
   outside <- vapply(
-    seq_len(nrow(eval_points)),
+    seq_len(nrow(newdata)),
     function(i) {
       any(
-        eval_points[i, ] < list_boosting$Omega[, 1L] |
-          eval_points[i, ] > list_boosting$Omega[, 2L]
+        newdata[i, ] < object$Omega[, 1L] |
+          newdata[i, ] > object$Omega[, 2L]
       )
     },
     logical(1)
   )
 
   if (!any(outside)) {
-    out_dens <- evaluate_log_density(
-      list_boosting$tree_list,
-      eval_points,
-      list_boosting$Omega
+    details <- evaluate_log_density(
+      object$tree_list,
+      newdata,
+      object$Omega
     )
   } else {
-    log_densities <- rep(-Inf, nrow(eval_points))
+    log_densities <- rep(-Inf, nrow(newdata))
     inside <- !outside
     if (any(inside)) {
-      inside_dens <- evaluate_log_density(
-        list_boosting$tree_list,
-        eval_points[inside, , drop = FALSE],
-        list_boosting$Omega
+      inside_densities <- evaluate_log_density(
+        object$tree_list,
+        newdata[inside, , drop = FALSE],
+        object$Omega
       )
-      log_densities[inside] <- inside_dens$log_densities
+      log_densities[inside] <- inside_densities$log_densities
     }
 
-    out_dens <- list(
+    details <- list(
       log_densities = log_densities,
-      mean_log_dens_path = rep(-Inf, length(list_boosting$tree_list))
+      mean_log_dens_path = rep(-Inf, length(object$tree_list))
     )
   }
 
-  out <- list(
-    out_dens$log_densities,
-    out_dens$mean_log_dens_path
+  if (identical(type, "details")) {
+    return(details)
+  }
+  if (identical(type, "log_density")) {
+    return(details$log_densities)
+  }
+
+  exp(details$log_densities)
+}
+
+#' @rdname predict.boostPM_fit
+#' @description
+#' Deprecated compatibility wrapper for `predict(object, newdata,
+#' type = "details")`.
+#'
+#' @param list_boosting A fitted object returned by [fit_boostpm()].
+#' @param eval_points A finite numeric matrix with evaluation points in rows
+#'   and one column per fitted variable.
+#' @return A list with `log_densities` and `mean_log_dens_path`.
+#' @export
+#' @md
+eval_density_b <- function(list_boosting, eval_points) {
+  .Deprecated("predict")
+  predict.boostPM_fit(
+    list_boosting,
+    newdata = eval_points,
+    type = "details"
   )
-  names(out) <- c("log_densities", "mean_log_dens_path")
-  out
+}
+
+#' @rdname simulate.boostPM_fit
+#' @description
+#' Deprecated compatibility wrapper for `simulate(object, nsim)`.
+#'
+#' @param list_boosting A fitted object returned by [fit_boostpm()].
+#' @param size Non-negative integer. Number of observations to simulate.
+#' @return A numeric matrix with `size` rows and one column per fitted
+#'   variable.
+#' @export
+#' @md
+simulation_b <- function(list_boosting, size) {
+  .Deprecated("simulate")
+  simulate.boostPM_fit(list_boosting, nsim = size)
 }

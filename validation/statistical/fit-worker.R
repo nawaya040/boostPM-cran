@@ -70,20 +70,22 @@ for (scenario in scenarios) {
   for (seed in seeds) {
     data <- simulate_scenario(scenario, n = 300L, seed = seed)
     set.seed(10000L + seed)
-    invisible(capture.output(fit <- do.call(boosting, fit_arguments(data$train))))
+    invisible(capture.output(
+      fit <- do.call(fit_boostpm, fit_arguments(data$train))
+    ))
 
-    train_log_density <- eval_density_b(fit, data$train)$log_densities
-    test_log_density <- eval_density_b(fit, data$test)$log_densities
+    train_log_density <- stats::predict(fit, data$train, type = "log_density")
+    test_log_density <- stats::predict(fit, data$test, type = "log_density")
     set.seed(20000L + seed)
     integration_points <- matrix(
       stats::runif(20000L * ncol(data$train)),
       ncol = ncol(data$train)
     )
     integral_estimate <- mean(exp(
-      eval_density_b(fit, integration_points)$log_densities
+      stats::predict(fit, integration_points, type = "log_density")
     ))
     set.seed(30000L + seed)
-    simulated <- simulation_b(fit, 2000L)
+    simulated <- stats::simulate(fit, nsim = 2000L)
 
     if (any(!is.finite(train_log_density)) || any(!is.finite(test_log_density))) {
       stop("Non-finite interior log density in ", scenario, ", seed ", seed)

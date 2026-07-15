@@ -1,4 +1,4 @@
-#' Fit an Unsupervised Tree Boosting Density Model
+#' Fit a boostPM Distribution
 #'
 #' Fits the unsupervised tree boosting procedure of Awaya and Ma (2024).
 #' Marginal trees are fitted first, followed by dependence trees. The fitted
@@ -53,7 +53,7 @@
 #' @examples
 #' set.seed(1)
 #' x <- matrix(c(0.2, 0.4, 0.6, 0.8), ncol = 1)
-#' fit <- boosting(
+#' fit <- fit_boostpm(
 #'   x,
 #'   add_noise = FALSE,
 #'   Omega = matrix(c(0, 1), nrow = 1),
@@ -63,7 +63,7 @@
 #'
 #' @export
 #' @md
-boosting <- function(data,
+fit_boostpm <- function(data,
                      add_noise = TRUE,
                      Omega = NULL,
                      ntree_max_marginal = 100,
@@ -135,4 +135,15 @@ boosting <- function(data,
   print(end_time - start_time)
 
   out
+}
+
+#' @rdname fit_boostpm
+#' @description
+#' Deprecated compatibility wrapper for [fit_boostpm()].
+#'
+#' @param ... Arguments passed to the primary fitting function.
+#' @export
+boosting <- function(...) {
+  .Deprecated("fit_boostpm")
+  fit_boostpm(...)
 }

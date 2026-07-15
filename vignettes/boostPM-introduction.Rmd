@@ -42,7 +42,7 @@ recommendation for an applied analysis.
 
 ```{r fit}
 set.seed(2)
-fit <- boosting(
+fit <- fit_boostpm(
   data,
   add_noise = FALSE,
   Omega = support,
@@ -64,8 +64,8 @@ seed and runtime provide the intended reproducibility level for a fit.
 
 ## Evaluate density
 
-`eval_density_b()` returns log density and the cumulative mean log-density
-path.
+`predict()` returns log density by default. Set `type = "density"` for density
+values, or `type = "details"` for the cumulative mean log-density path.
 
 ```{r evaluate}
 evaluation_points <- rbind(
@@ -74,15 +74,15 @@ evaluation_points <- rbind(
   c(0.75, 0.25)
 )
 
-evaluated <- eval_density_b(fit, evaluation_points)
-cbind(evaluation_points, density = exp(evaluated$log_densities))
+log_density <- predict(fit, evaluation_points, type = "log_density")
+cbind(evaluation_points, density = exp(log_density))
 ```
 
 Points outside the support have log density `-Inf`.
 
 ```{r outside-support}
 outside <- rbind(c(-0.10, 0.50), c(0.50, 0.50), c(1.10, 0.50))
-eval_density_b(fit, outside)$log_densities
+predict(fit, outside, type = "log_density")
 ```
 
 ## Generate samples
@@ -92,7 +92,7 @@ random-number generator, so it can be reproduced with a seed.
 
 ```{r simulate}
 set.seed(3)
-simulation_b(fit, 6)
+simulate(fit, nsim = 6)
 ```
 
 ## Practical notes
