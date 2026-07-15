@@ -25,20 +25,15 @@ Once the repository is public, a GitHub installation route can be used with
 ```r
 library(boostPM)
 
-data <- matrix(c(
-  0.10, 0.80,
-  0.20, 0.70,
-  0.30, 0.60,
-  0.40, 0.90,
-  0.60, 0.40,
-  0.70, 0.30,
-  0.80, 0.20,
-  0.90, 0.10
-), ncol = 2, byrow = TRUE)
+set.seed(1)
+data <- cbind(
+  rbeta(80, shape1 = 2, shape2 = 5),
+  rbeta(80, shape1 = 5, shape2 = 2)
+)
 
 support <- cbind(c(0, 0), c(1, 1))
 
-set.seed(20260715)
+set.seed(2)
 fit <- boosting(
   data,
   add_noise = FALSE,
@@ -55,7 +50,7 @@ fit <- boosting(
 evaluated <- eval_density_b(fit, data)
 exp(evaluated$log_densities)
 
-set.seed(20260716)
+set.seed(3)
 simulated <- simulation_b(fit, 10)
 ```
 
