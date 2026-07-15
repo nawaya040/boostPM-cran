@@ -62,6 +62,23 @@ fit$variable_importance
 Calling `set.seed()` controls the stochastic tree-fitting decisions. The same
 seed and runtime provide the intended reproducibility level for a fit.
 
+## Inspect the fitted object
+
+`fit_boostpm()` returns silently. The S3 methods provide a compact summary
+and diagnostic plots.
+
+```{r inspect}
+print(fit)
+summary(fit)
+plot(fit, type = "variable_importance")
+```
+
+Tree-size and maximum-depth diagnostics are also available.
+
+```{r plot-tree-size}
+plot(fit, type = "tree_size")
+```
+
 ## Evaluate density
 
 `predict()` returns log density by default. Set `type = "density"` for density

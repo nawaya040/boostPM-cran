@@ -57,6 +57,20 @@ simulated <- simulate(fit, nsim = 10)
 The fit is a `boostPM_fit` object whose list components include serialized
 trees, residuals, support, and variable-importance diagnostics.
 
+## Inspect a fitted model
+
+`fit_boostpm()` returns silently. Use the S3 methods to inspect the fit and
+its diagnostics.
+
+```r
+print(fit)
+summary(fit)
+plot(fit, type = "variable_importance")
+```
+
+The plot method also supports `type = "tree_size"` and
+`type = "max_depth"`.
+
 ## Input and reproducibility notes
 
 - `data` must be a finite numeric matrix with observations in rows.
