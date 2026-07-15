@@ -143,6 +143,7 @@ plot.boostPM_fit <- function(x,
   if (is.null(values) || length(values) == 0L) {
     .boostpm_stop_invalid(sprintf("No '%s' diagnostic is available.", type))
   }
+  values <- as.numeric(values)
 
   labels <- switch(
     type,

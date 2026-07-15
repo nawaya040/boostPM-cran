@@ -44,7 +44,7 @@ testthat::test_that("boostPM fit methods provide compact diagnostics", {
     residuals_boosting = matrix(0, nrow = 2L, ncol = 4L),
     tree_size_store = c(3L, 5L),
     max_depth_store = c(1L, 2L),
-    variable_importance = c(0.7, 0.3),
+    variable_importance = matrix(c(0.7, 0.3), ncol = 1L),
     tree_list = list(list(), list()),
     Omega = cbind(c(0, 0), c(1, 1)),
     time = structure(0.25, units = "secs", class = "difftime")
