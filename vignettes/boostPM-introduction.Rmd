@@ -1,0 +1,114 @@
+---
+title: "Introduction to boostPM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to boostPM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(comment = "#>")
+```
+
+The `boostPM` package estimates probability distributions with an ensemble of
+tree-based probability measures. This vignette fits a small model, evaluates
+its density, and generates samples from the fitted distribution.
+
+## Data and support
+
+Observations occupy rows and variables occupy columns. In this example the
+support is the unit square. Training observations must be strictly inside a
+user-supplied support matrix.
+
+```{r data}
+library(boostPM)
+
+data <- matrix(c(
+  0.10, 0.80,
+  0.20, 0.70,
+  0.30, 0.60,
+  0.40, 0.90,
+  0.60, 0.40,
+  0.70, 0.30,
+  0.80, 0.20,
+  0.90, 0.10
+), ncol = 2, byrow = TRUE)
+
+support <- cbind(c(0, 0), c(1, 1))
+```
+
+## Fit a small ensemble
+
+The number of marginal and dependence trees controls the two fitting stages.
+This deliberately small fit is suitable for an example, rather than a tuning
+recommendation for an applied analysis.
+
+```{r fit}
+set.seed(20260715)
+fit <- boosting(
+  data,
+  add_noise = FALSE,
+  Omega = support,
+  ntree_max_marginal = 2,
+  ntree_max_dependence = 2,
+  c0 = 0.1,
+  gamma = 0.5,
+  max_resol = 1,
+  min_obs = 2,
+  nbins = 4
+)
+
+fit$tree_size_store
+fit$variable_importance
+```
+
+Calling `set.seed()` controls the stochastic tree-fitting decisions. The same
+seed and runtime provide the intended reproducibility level for a fit.
+
+## Evaluate density
+
+`eval_density_b()` returns log density and the cumulative mean log-density
+path.
+
+```{r evaluate}
+evaluation_points <- rbind(
+  c(0.25, 0.75),
+  c(0.50, 0.50),
+  c(0.75, 0.25)
+)
+
+evaluated <- eval_density_b(fit, evaluation_points)
+cbind(evaluation_points, density = exp(evaluated$log_densities))
+```
+
+Points outside the support have log density `-Inf`.
+
+```{r outside-support}
+outside <- rbind(c(-0.10, 0.50), c(0.50, 0.50), c(1.10, 0.50))
+eval_density_b(fit, outside)$log_densities
+```
+
+## Generate samples
+
+The fitted tree ensemble is also a generative model. Sampling uses R's
+random-number generator, so it can be reproduced with a seed.
+
+```{r simulate}
+set.seed(20260716)
+simulation_b(fit, 6)
+```
+
+## Practical notes
+
+- Use a finite numeric matrix. Constant columns are not supported.
+- `Omega` must have two columns and positive width in each dimension.
+- `nbins` controls the uniform candidate split grid and must be at least two.
+- `c0` is strictly between zero and one; `gamma` is non-negative.
+- Larger experiments and tuning should use held-out predictive log density,
+  following the numerical evaluation in Awaya and Ma (2024).
+
+## References
+
+Awaya, N. and Ma, L. (2024). Unsupervised Tree Boosting for Learning
+Probability Distributions. *Journal of Machine Learning Research*, 25, 1--52.
