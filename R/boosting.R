@@ -1,3 +1,68 @@
+#' Fit an Unsupervised Tree Boosting Density Model
+#'
+#' Fits the unsupervised tree boosting procedure of Awaya and Ma (2024).
+#' Marginal trees are fitted first, followed by dependence trees. The fitted
+#' ensemble represents a probability distribution on a rectangular support.
+#'
+#' @param data A finite numeric matrix. Rows are observations and columns are
+#'   variables. Constant columns are not supported.
+#' @param add_noise A single logical value. If `TRUE`, tied observations are
+#'   jittered using R's random-number generator before fitting.
+#' @param Omega Either `NULL`, or a finite numeric matrix with one row per
+#'   variable and two columns giving lower and upper support limits. Each
+#'   training observation must be strictly inside the supplied limits.
+#' @param ntree_max_marginal Non-negative integer. Maximum number of trees in
+#'   each marginal fitting stage.
+#' @param ntree_max_dependence Non-negative integer. Maximum number of trees in
+#'   the dependence fitting stage.
+#' @param c0 Numeric shrinkage parameter, strictly between zero and one.
+#' @param gamma Non-negative numeric local scale parameter.
+#' @param max_resol Non-negative integer controlling the maximum split
+#'   resolution. Its archived interpretation permits leaves at depth
+#'   `max_resol + 1`.
+#' @param min_obs Positive integer giving the minimum node observation count
+#'   used by the split rule.
+#' @param early_stop Either `NULL`, or a finite numeric vector of length two.
+#'   Its first entry is the stopping threshold and its second entry is an
+#'   integer waiting-window length of at least two.
+#' @param alpha Numeric parameter in `[0, 1]` for the depth-dependent split
+#'   probability.
+#' @param beta Non-negative numeric parameter for the depth-dependent split
+#'   probability.
+#' @param precision Positive numeric precision parameter for the beta
+#'   distribution used in split scoring.
+#' @param nbins Integer of at least two. Number of uniform-grid candidate split
+#'   locations.
+#'
+#' @return An object of class `boostPM_fit`. It retains the list layout of the
+#'   archived implementation and contains serialized trees, residuals, tree
+#'   diagnostics, variable importance, `Omega`, and elapsed fitting time.
+#'
+#' @details
+#' If `Omega` is `NULL`, a rectangular support is constructed from the
+#' processed data. If `add_noise` is `TRUE`, call [set.seed()] before fitting
+#' to reproduce the jitter and subsequent stochastic tree-fitting decisions.
+#' Reproducibility is intended within a fixed R runtime. Exact equality across
+#' operating systems has not been established.
+#'
+#' @references
+#' Awaya, N. and Ma, L. (2024). Unsupervised Tree Boosting for Learning
+#' Probability Distributions. *Journal of Machine Learning Research*, 25,
+#' 1--52.
+#'
+#' @examples
+#' set.seed(1)
+#' x <- matrix(c(0.2, 0.4, 0.6, 0.8), ncol = 1)
+#' fit <- boosting(
+#'   x,
+#'   add_noise = FALSE,
+#'   Omega = matrix(c(0, 1), nrow = 1),
+#'   ntree_max_marginal = 0,
+#'   ntree_max_dependence = 0
+#' )
+#'
+#' @export
+#' @md
 boosting <- function(data,
                      add_noise = TRUE,
                      Omega = NULL,
