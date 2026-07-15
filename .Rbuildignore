@@ -1,0 +1,12 @@
+^AGENTS\.md$
+^LICENSE\.md$
+^\.agents$
+^\.sandbox$
+^\.git$
+^\.github$
+^original$
+^docs$
+^validation$
+^benchmarks$
+^.*\.Rproj$
+^\.Rproj\.user$

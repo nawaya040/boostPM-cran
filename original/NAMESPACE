@@ -1,0 +1,3 @@
+useDynLib(boostPM, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+export(boosting, simulation_b, eval_density_b)

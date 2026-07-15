@@ -1,0 +1,21 @@
+Package: boostPM
+Type: Package
+Title: Unsupervised Tree Boosting for Learning Probability Distributions
+Version: 0.0.0.9000
+Authors@R: person("Naoki", "Awaya", role = c("aut", "cre"),
+    email = "nawaya@waseda.jp")
+Description: Implements the unsupervised tree boosting method for learning
+    probability distributions described by Awaya and Ma (2024). This initial
+    development version preserves the numerical procedure of the archived
+    research implementation while package structure and validation are built.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    Rcpp (>= 1.0.7),
+    stats
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
