@@ -45,7 +45,9 @@ change, not an output change for valid fitted objects.
 
 ## Remaining risks
 
-- Linux and macOS compilation has not yet been run.
+- Cross-platform package checks now pass on Windows, macOS, and Ubuntu through
+  GitHub Actions run 29393713955. Cross-platform fixed-seed numerical equality
+  remains to be measured separately.
 - The unused prototype `count_tree` code still uses recursive ownership and
   should be removed or isolated only after confirming it is not supported API.
 

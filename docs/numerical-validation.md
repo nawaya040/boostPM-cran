@@ -100,7 +100,6 @@ Not assessed. No parameter-recovery, simulation-based calibration, posterior pre
 
 ## 6. Remaining validation gaps
 
-- Linux and macOS toolchains.
 - Other R, Rcpp, and RcppArmadillo versions.
 - Missing and infinite inputs.
 - Empty data and very small samples.
@@ -281,8 +280,10 @@ are intended for regression detection and later expansion with paper-scale
 experiments.
 
 `.github/workflows/R-CMD-check.yaml` now defines checks on Windows, macOS, and
-Ubuntu. The Windows check has been run locally. macOS and Linux results remain
-unresolved until the workflow is triggered in the repository. After excluding
-`.github` from the source tarball, the final Windows `R CMD check --as-cran
---no-manual` completed with 0 errors, 0 warnings, and 2 notes: the development
-version/new-submission notice and unavailable local pandoc.
+Ubuntu. GitHub Actions run 29393713955 completed successfully on all three
+platforms. This confirms compilation, examples, and the routine test suite on
+the hosted release-R environments. It does not establish exact numerical
+equality across platforms. After excluding `.github` from the source tarball,
+the final local Windows `R CMD check --as-cran --no-manual` completed with 0
+errors, 0 warnings, and 2 notes: the development version/new-submission notice
+and unavailable local pandoc.
