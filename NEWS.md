@@ -8,13 +8,22 @@
 * Preserves the archived research implementation in original/ while providing
   a validated, portable package implementation.
 
+* Removed the provisional `boosting()`, `eval_density_b()`, and
+  `simulation_b()` interfaces before the first CRAN release.
+
+* Added optional stage-level fitting messages through
+  `progress = "stage"`; fitting remains silent by default.
+
+* Expanded the introductory vignette with fitted-density and
+  generated-sample visualizations.
+
 # boostPM 0.0.0.9000
 
 * Added print(), summary(), and plot() methods for boostPM_fit objects.
   fit_boostpm() no longer prints elapsed fitting time automatically.
 * Renamed the primary public API to `fit_boostpm()`, `predict()`, and
-  `simulate()`. The former `boosting()`, `eval_density_b()`, and
-  `simulation_b()` functions remain as deprecated compatibility wrappers.
+  `simulate()`. The provisional names used during development were removed
+  before the 0.1.0 release.
 * Added R-side validation for public fitting, simulation, and density-evaluation
   inputs.
 * Enforced approved parameter domains: `0 < c0 < 1`, `gamma >= 0`,

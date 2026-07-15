@@ -2,7 +2,7 @@ testthat::test_that("one-split density agrees with hand calculation", {
   fit <- make_one_split_fit(theta = 0.25, location = 0.5)
   points <- matrix(c(0.25, 0.75), ncol = 1L)
 
-  result <- boostPM::eval_density_b(fit, points)
+  result <- stats::predict(fit, points, type = "details")
 
   testthat::expect_equal(
     as.numeric(result$log_densities),
@@ -28,21 +28,25 @@ testthat::test_that("one-split inverse transform agrees with hand calculation", 
   )
 
   set.seed(101)
-  simulated <- boostPM::simulation_b(fit, 5L)
+  simulated <- stats::simulate(fit, nsim = 5L)
 
   testthat::expect_equal(as.numeric(simulated), expected, tolerance = 1e-15)
 })
 
 testthat::test_that("two-tree density uses residual composition order", {
-  fit <- list(
+  fit <- structure(list(
     tree_list = list(
       make_one_split_fit(theta = 0.25)$tree_list[[1]],
       make_one_split_fit(theta = 0.75)$tree_list[[1]]
     ),
     Omega = matrix(c(0, 1), nrow = 1L)
-  )
+  ), class = c("boostPM_fit", "list"))
 
-  result <- boostPM::eval_density_b(fit, matrix(c(0.2, 0.8), ncol = 1L))
+  result <- stats::predict(
+    fit,
+    matrix(c(0.2, 0.8), ncol = 1L),
+    type = "details"
+  )
 
   testthat::expect_equal(
     as.numeric(result$log_densities),
@@ -64,7 +68,7 @@ testthat::test_that("support Jacobian is subtracted on the original scale", {
   )
   points <- matrix(c(11, 13), ncol = 1L)
 
-  result <- boostPM::eval_density_b(fit, points)
+  result <- stats::predict(fit, points, type = "details")
 
   testthat::expect_equal(
     as.numeric(result$log_densities),
@@ -72,4 +76,3 @@ testthat::test_that("support Jacobian is subtracted on the original scale", {
     tolerance = 1e-15
   )
 })
-

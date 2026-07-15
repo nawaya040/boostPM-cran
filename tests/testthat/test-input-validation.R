@@ -8,49 +8,49 @@ minimal_fit_arguments <- function() {
   )
 }
 
-testthat::test_that("boosting validates the data matrix", {
+testthat::test_that("fit_boostpm validates the data matrix", {
   arguments <- minimal_fit_arguments()
 
   testthat::expect_error(
-    do.call(boostPM::boosting, utils::modifyList(arguments, list(data = 1:3))),
+    do.call(boostPM::fit_boostpm, utils::modifyList(arguments, list(data = 1:3))),
     "numeric matrix"
   )
   testthat::expect_error(
     do.call(
-      boostPM::boosting,
+      boostPM::fit_boostpm,
       utils::modifyList(arguments, list(data = matrix(numeric(), ncol = 1L)))
     ),
     "at least one row"
   )
   testthat::expect_error(
     do.call(
-      boostPM::boosting,
+      boostPM::fit_boostpm,
       utils::modifyList(arguments, list(data = matrix(c(0, Inf), ncol = 1L)))
     ),
     "finite values"
   )
 })
 
-testthat::test_that("boosting validates support structure", {
+testthat::test_that("fit_boostpm validates support structure", {
   arguments <- minimal_fit_arguments()
 
   testthat::expect_error(
     do.call(
-      boostPM::boosting,
+      boostPM::fit_boostpm,
       utils::modifyList(arguments, list(Omega = matrix(c(0, 1, 2), nrow = 1L)))
     ),
     "exactly two columns"
   )
   testthat::expect_error(
     do.call(
-      boostPM::boosting,
+      boostPM::fit_boostpm,
       utils::modifyList(arguments, list(Omega = matrix(c(0, 0), nrow = 1L)))
     ),
     "lower bound below"
   )
   testthat::expect_error(
     do.call(
-      boostPM::boosting,
+      boostPM::fit_boostpm,
       utils::modifyList(
         arguments,
         list(Omega = cbind(c(0, 0), c(1, 1)))
@@ -60,7 +60,7 @@ testthat::test_that("boosting validates support structure", {
   )
 })
 
-testthat::test_that("boosting validates structural controls", {
+testthat::test_that("fit_boostpm validates structural controls", {
   arguments <- minimal_fit_arguments()
 
   invalid_controls <- list(
@@ -81,15 +81,23 @@ testthat::test_that("boosting validates structural controls", {
     call_arguments <- arguments
     call_arguments[[name]] <- invalid_controls[[name]]
     testthat::expect_error(
-      do.call(boostPM::boosting, call_arguments),
+      do.call(boostPM::fit_boostpm, call_arguments),
       name,
       fixed = TRUE,
       info = name
     )
   }
+
+  testthat::expect_error(
+    do.call(
+      boostPM::fit_boostpm,
+      utils::modifyList(arguments, list(progress = "bar"))
+    ),
+    "progress"
+  )
 })
 
-testthat::test_that("boosting validates statistical parameter domains", {
+testthat::test_that("fit_boostpm validates statistical parameter domains", {
   arguments <- minimal_fit_arguments()
 
   invalid_parameters <- list(
@@ -105,7 +113,7 @@ testthat::test_that("boosting validates statistical parameter domains", {
       call_arguments <- arguments
       call_arguments[[name]] <- value
       testthat::expect_error(
-        do.call(boostPM::boosting, call_arguments),
+        do.call(boostPM::fit_boostpm, call_arguments),
         name,
         fixed = TRUE,
         info = paste(name, value)
@@ -116,19 +124,17 @@ testthat::test_that("boosting validates statistical parameter domains", {
   for (alpha in c(0, 1)) {
     call_arguments <- arguments
     call_arguments$alpha <- alpha
-    testthat::expect_no_error({
-      output <- utils::capture.output(do.call(boostPM::boosting, call_arguments))
-    })
+    testthat::expect_no_error(do.call(boostPM::fit_boostpm, call_arguments))
   }
 })
 
-testthat::test_that("boosting rejects constant columns", {
+testthat::test_that("fit_boostpm rejects constant columns", {
   arguments <- minimal_fit_arguments()
   arguments$data <- cbind(c(0.25, 0.75), c(1, 1))
   arguments$Omega <- cbind(c(0, 0), c(1, 2))
 
   testthat::expect_error(
-    do.call(boostPM::boosting, arguments),
+    do.call(boostPM::fit_boostpm, arguments),
     "constant column"
   )
 })
@@ -141,99 +147,106 @@ testthat::test_that("jittered observations must remain inside supplied support",
 
   set.seed(1)
   testthat::expect_error(
-    do.call(boostPM::boosting, arguments),
+    do.call(boostPM::fit_boostpm, arguments),
     "Jittered observations"
   )
 })
 
 testthat::test_that("experimental max_n_var argument is removed", {
-  testthat::expect_false("max_n_var" %in% names(formals(boostPM::boosting)))
+  testthat::expect_false(
+    "max_n_var" %in% names(formals(boostPM::fit_boostpm))
+  )
 })
 
-testthat::test_that("boosting validates early stopping controls", {
+testthat::test_that("fit_boostpm validates early stopping controls", {
   arguments <- minimal_fit_arguments()
 
   for (value in list(1, c(0, 2, 3), c(NA, 2), c(0, 1), c(0, 2.5))) {
     call_arguments <- arguments
     call_arguments$early_stop <- value
     testthat::expect_error(
-      do.call(boostPM::boosting, call_arguments),
+      do.call(boostPM::fit_boostpm, call_arguments),
       "early_stop",
       fixed = TRUE
     )
   }
 
-  testthat::expect_no_error({
-    output <- utils::capture.output(do.call(
-      boostPM::boosting,
-      utils::modifyList(arguments, list(early_stop = c(-0.01, 2)))
-    ))
-  })
+  testthat::expect_no_error(do.call(
+    boostPM::fit_boostpm,
+    utils::modifyList(arguments, list(early_stop = c(-0.01, 2)))
+  ))
 
   one_row <- arguments
   one_row$data <- matrix(0.5, ncol = 1L)
   one_row$ntree_max_marginal <- 1
   one_row$early_stop <- c(0, 2)
   testthat::expect_error(
-    do.call(boostPM::boosting, one_row),
+    do.call(boostPM::fit_boostpm, one_row),
     "at least two data rows"
   )
 })
 
 testthat::test_that("post-processing validates fitted objects", {
-  valid_fit <- list(
-    tree_list = list(),
-    Omega = matrix(c(0, 1), nrow = 1L)
+  incomplete <- structure(
+    list(tree_list = list()),
+    class = c("boostPM_fit", "list")
+  )
+  malformed <- structure(
+    list(tree_list = 1, Omega = matrix(c(0, 1), nrow = 1L)),
+    class = c("boostPM_fit", "list")
   )
 
   testthat::expect_error(
-    boostPM::simulation_b(NULL, 1),
+    boostPM:::simulate.boostPM_fit(NULL, 1),
     "fitted object"
   )
   testthat::expect_error(
-    boostPM::simulation_b(list(tree_list = list()), 1),
+    stats::simulate(incomplete, nsim = 1),
     "missing required component"
   )
   testthat::expect_error(
-    boostPM::simulation_b(list(tree_list = 1, Omega = valid_fit$Omega), 1),
+    stats::simulate(malformed, nsim = 1),
     "tree_list"
   )
 })
 
-testthat::test_that("simulation validates its requested size", {
-  fit <- list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L))
+testthat::test_that("simulation validates nsim", {
+  fit <- structure(
+    list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L)),
+    class = c("boostPM_fit", "list")
+  )
 
-  for (size in list(-1, 1.5, Inf, c(1, 2), "1")) {
+  for (nsim in list(-1, 1.5, Inf, c(1, 2), "1")) {
     testthat::expect_error(
-      boostPM::simulation_b(fit, size),
-      "size",
+      stats::simulate(fit, nsim = nsim),
+      "nsim",
       fixed = TRUE
     )
   }
 
   set.seed(1)
   testthat::expect_identical(
-    boostPM::simulation_b(fit, 0),
+    stats::simulate(fit, nsim = 0),
     matrix(numeric(), nrow = 0L, ncol = 1L)
   )
 })
 
 testthat::test_that("density evaluation validates its point matrix", {
-  fit <- list(
-    tree_list = list(),
-    Omega = cbind(c(0, 0), c(1, 1))
+  fit <- structure(
+    list(tree_list = list(), Omega = cbind(c(0, 0), c(1, 1))),
+    class = c("boostPM_fit", "list")
   )
 
   testthat::expect_error(
-    boostPM::eval_density_b(fit, c(0.5, 0.5)),
+    stats::predict(fit, c(0.5, 0.5)),
     "numeric matrix"
   )
   testthat::expect_error(
-    boostPM::eval_density_b(fit, matrix(0.5, ncol = 1L)),
+    stats::predict(fit, matrix(0.5, ncol = 1L)),
     "one column for each row"
   )
   testthat::expect_error(
-    boostPM::eval_density_b(fit, matrix(c(0.5, NA), nrow = 1L)),
+    stats::predict(fit, matrix(c(0.5, NA), nrow = 1L)),
     "finite values"
   )
 })

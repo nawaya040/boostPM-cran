@@ -2,12 +2,9 @@
 % Please edit documentation in R/postprocessing.R
 \name{simulate.boostPM_fit}
 \alias{simulate.boostPM_fit}
-\alias{simulation_b}
 \title{Simulate from a Fitted boostPM Distribution}
 \usage{
 \method{simulate}{boostPM_fit}(object, nsim = 1L, seed = NULL, ...)
-
-simulation_b(list_boosting, size)
 }
 \arguments{
 \item{object}{A fitted object returned by \code{\link[=fit_boostpm]{fit_boostpm()}}.}
@@ -18,23 +15,14 @@ simulation_b(list_boosting, size)
 number generator immediately before simulation.}
 
 \item{...}{Unused. Additional arguments are an error.}
-
-\item{list_boosting}{A fitted object returned by \code{\link[=fit_boostpm]{fit_boostpm()}}.}
-
-\item{size}{Non-negative integer. Number of observations to simulate.}
 }
 \value{
 A numeric matrix with \code{nsim} rows and one column per fitted
-variable.
-
-A numeric matrix with \code{size} rows and one column per fitted
 variable.
 }
 \description{
 Draws samples from the probability distribution represented by a fitted
 tree ensemble.
-
-Deprecated compatibility wrapper for \code{simulate(object, nsim)}.
 }
 \details{
 With \code{seed = NULL}, randomness is controlled by calling \code{\link[=set.seed]{set.seed()}} before

@@ -170,41 +170,41 @@
   invisible(NULL)
 }
 
-.boostpm_validate_fit_object <- function(list_boosting) {
-  if (!is.list(list_boosting)) {
+.boostpm_validate_fit_object <- function(object) {
+  if (!is.list(object)) {
     .boostpm_stop_invalid(
-      "`list_boosting` must be a fitted object returned by `boosting()`."
+      "`object` must be a fitted object returned by `fit_boostpm()`."
     )
   }
 
   required <- c("tree_list", "Omega")
-  missing_components <- setdiff(required, names(list_boosting))
+  missing_components <- setdiff(required, names(object))
   if (length(missing_components) > 0L) {
     .boostpm_stop_invalid(sprintf(
-      "`list_boosting` is missing required component%s: %s.",
+      "`object` is missing required component%s: %s.",
       if (length(missing_components) == 1L) "" else "s",
       paste(sprintf("`%s`", missing_components), collapse = ", ")
     ))
   }
 
-  if (!is.list(list_boosting$tree_list)) {
-    .boostpm_stop_invalid("`list_boosting$tree_list` must be a list.")
+  if (!is.list(object$tree_list)) {
+    .boostpm_stop_invalid("`object$tree_list` must be a list.")
   }
 
-  .boostpm_validate_support(list_boosting$Omega)
+  .boostpm_validate_support(object$Omega)
   invisible(NULL)
 }
 
-.boostpm_validate_simulation_size <- function(size) {
-  .boostpm_validate_scalar(size, "size")
-  if (size != floor(size) || size < 0L || size > .Machine$integer.max) {
+.boostpm_validate_simulation_size <- function(nsim) {
+  .boostpm_validate_scalar(nsim, "nsim")
+  if (nsim != floor(nsim) || nsim < 0L || nsim > .Machine$integer.max) {
     .boostpm_stop_invalid(sprintf(
-      "`size` must be a non-negative integer-valued number no greater than %s.",
+      "`nsim` must be a non-negative integer-valued number no greater than %s.",
       format(.Machine$integer.max, scientific = FALSE)
     ))
   }
 
-  invisible(size)
+  invisible(nsim)
 }
 
 .boostpm_validate_eval_points <- function(eval_points, dimension) {

@@ -33,6 +33,9 @@
 #'   distribution used in split scoring.
 #' @param nbins Integer of at least two. Number of uniform-grid candidate split
 #'   locations.
+#' @param progress Character string controlling progress messages. `"none"`
+#'   suppresses progress output and `"stage"` reports each marginal fitting
+#'   stage and the dependence stage.
 #'
 #' @return An object of class `boostPM_fit`. It retains the list layout of the
 #'   archived implementation and contains serialized trees, residuals, tree
@@ -42,8 +45,9 @@
 #' If `Omega` is `NULL`, a rectangular support is constructed from the
 #' processed data. If `add_noise` is `TRUE`, call [set.seed()] before fitting
 #' to reproduce the jitter and subsequent stochastic tree-fitting decisions.
-#' The function does not print fitting progress or elapsed time. Use [print()]
-#' or [summary()] on the returned object to inspect the fit.
+#' Fitting progress is silent by default. Set `progress = "stage"` to report
+#' the current fitting stage. Elapsed time is stored in the returned object;
+#' use [print()] or [summary()] to inspect the fit.
 #' Reproducibility is intended within a fixed R runtime. Exact equality across
 #' operating systems has not been established.
 #'
@@ -78,7 +82,16 @@ fit_boostpm <- function(data,
                      alpha = 0.9,
                      beta = 0.0,
                      precision = 1.0,
-                     nbins = 8) {
+                     nbins = 8,
+                     progress = c("none", "stage")) {
+  progress <- tryCatch(
+    match.arg(progress),
+    error = function(cnd) {
+      .boostpm_stop_invalid(
+        "`progress` must be one of \"none\" or \"stage\"."
+      )
+    }
+  )
   .boostpm_validate_numeric_matrix(data, "data")
   if (!is.null(Omega)) {
     .boostpm_validate_support(Omega, dimension = ncol(data))
@@ -126,7 +139,8 @@ fit_boostpm <- function(data,
     nbins,
     stopping$eta_subsample,
     stopping$thresh_stop,
-    stopping$ntrees_wait
+    stopping$ntrees_wait,
+    identical(progress, "stage")
   )
 
   out$Omega <- Omega
@@ -136,15 +150,4 @@ fit_boostpm <- function(data,
   class(out) <- c("boostPM_fit", "list")
 
   out
-}
-
-#' @rdname fit_boostpm
-#' @description
-#' Deprecated compatibility wrapper for [fit_boostpm()].
-#'
-#' @param ... Arguments passed to the primary fitting function.
-#' @export
-boosting <- function(...) {
-  .Deprecated("fit_boostpm")
-  fit_boostpm(...)
 }

@@ -16,6 +16,14 @@ Awaya, N. and Ma, L. (2024). Unsupervised Tree Boosting for Learning
 Probability Distributions. \emph{Journal of Machine Learning Research}, 25,
 1--52.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/nawaya040/boostPM-cran}
+  \item Report bugs at \url{https://github.com/nawaya040/boostPM-cran/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Naoki Awaya \email{nawaya@waseda.jp}
 

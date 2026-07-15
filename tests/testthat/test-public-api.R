@@ -23,20 +23,65 @@ testthat::test_that("new public API returns documented prediction types", {
   )
 })
 
-testthat::test_that("deprecated names retain their established result forms", {
-  fit <- list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L))
+testthat::test_that("provisional function names are absent from the public API", {
+  retired <- c("boosting", "eval_density_b", "simulation_b")
+  testthat::expect_false(any(retired %in% getNamespaceExports("boostPM")))
+  testthat::expect_false(any(vapply(
+    retired,
+    exists,
+    logical(1),
+    envir = asNamespace("boostPM"),
+    inherits = FALSE
+  )))
+})
 
-  testthat::expect_warning(
-    simulated <- boostPM::simulation_b(fit, 2L),
-    "deprecated"
+testthat::test_that("progress messages are optional and numerically inert", {
+  arguments <- list(
+    data = small_two_dimensional_data(),
+    add_noise = FALSE,
+    Omega = cbind(c(0, 0), c(1, 1)),
+    ntree_max_marginal = 1,
+    ntree_max_dependence = 1,
+    c0 = 0.1,
+    gamma = 0,
+    max_resol = 1,
+    min_obs = 2,
+    alpha = 0.9,
+    beta = 0,
+    precision = 1,
+    nbins = 4
   )
-  testthat::expect_identical(dim(simulated), c(2L, 1L))
 
-  testthat::expect_warning(
-    details <- boostPM::eval_density_b(fit, matrix(0.5, ncol = 1L)),
-    "deprecated"
+  set.seed(20240714)
+  silent_output <- capture.output(
+    silent_fit <- do.call(
+      boostPM::fit_boostpm,
+      c(arguments, list(progress = "none"))
+    )
   )
-  testthat::expect_named(details, c("log_densities", "mean_log_dens_path"))
+  set.seed(20240714)
+  stage_output <- capture.output(
+    stage_fit <- do.call(
+      boostPM::fit_boostpm,
+      c(arguments, list(progress = "stage"))
+    )
+  )
+
+  testthat::expect_length(silent_output, 0L)
+  testthat::expect_identical(
+    stage_output,
+    c(
+      "Fitting marginal distribution 1 of 2",
+      "Fitting marginal distribution 2 of 2",
+      "Fitting dependence structure"
+    )
+  )
+
+  fields <- c(
+    "residuals_boosting", "tree_size_store", "max_depth_store",
+    "variable_importance", "tree_list", "Omega"
+  )
+  testthat::expect_identical(silent_fit[fields], stage_fit[fields])
 })
 
 testthat::test_that("boostPM fit methods provide compact diagnostics", {

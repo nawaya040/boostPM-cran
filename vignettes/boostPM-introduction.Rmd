@@ -8,55 +8,76 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(comment = "#>")
+knitr::opts_chunk$set(
+  comment = "#>",
+  fig.width = 6.5,
+  fig.height = 5,
+  fig.align = "center"
+)
 ```
 
-The `boostPM` package estimates probability distributions with an ensemble of
-tree-based probability measures. This vignette fits a small model, evaluates
-its density, and generates samples from the fitted distribution.
+The `boostPM` package estimates probability distributions with an ensemble
+of tree-based probability measures. This vignette fits a two-dimensional
+distribution, evaluates the fitted density on a grid, and compares observations
+generated from the fit with the training data.
 
 ## Data and support
 
-Observations occupy rows and variables occupy columns. This example draws two
-variables from beta distributions with different shapes. The support is the
-unit square. Training observations must be strictly inside a user-supplied
-support matrix.
+Observations occupy rows and variables occupy columns. The example uses a
+Gaussian copula to create dependent variables with beta marginal
+distributions. The support is the unit square. Training observations must be
+strictly inside a user-supplied support matrix.
 
 ```{r data}
 library(boostPM)
 
 set.seed(1)
-data <- cbind(
-  rbeta(80, shape1 = 2, shape2 = 5),
-  rbeta(80, shape1 = 5, shape2 = 2)
-)
+n_training <- 200L
+dependence <- 0.7
+latent_1 <- rnorm(n_training)
+latent_2 <- dependence * latent_1 +
+  sqrt(1 - dependence^2) * rnorm(n_training)
 
+training_data <- cbind(
+  x1 = qbeta(pnorm(latent_1), shape1 = 2, shape2 = 5),
+  x2 = qbeta(pnorm(latent_2), shape1 = 5, shape2 = 2)
+)
 support <- cbind(c(0, 0), c(1, 1))
+
+plot(
+  training_data,
+  xlim = support[1, ],
+  ylim = support[2, ],
+  asp = 1,
+  pch = 16,
+  col = grDevices::adjustcolor("black", alpha.f = 0.45),
+  xlab = "x1",
+  ylab = "x2",
+  main = "Training data"
+)
 ```
 
-## Fit a small ensemble
+## Fit an ensemble
 
 The number of marginal and dependence trees controls the two fitting stages.
-This deliberately small fit is suitable for an example, rather than a tuning
-recommendation for an applied analysis.
+The settings below are deliberately moderate so that the vignette remains
+suitable for routine package checks. Applied analyses should select tuning
+parameters using held-out predictive performance.
 
 ```{r fit}
 set.seed(2)
 fit <- fit_boostpm(
-  data,
+  training_data,
   add_noise = FALSE,
   Omega = support,
-  ntree_max_marginal = 2,
-  ntree_max_dependence = 2,
+  ntree_max_marginal = 6,
+  ntree_max_dependence = 12,
   c0 = 0.1,
   gamma = 0.5,
-  max_resol = 1,
-  min_obs = 2,
-  nbins = 4
+  max_resol = 2,
+  min_obs = 5,
+  nbins = 6
 )
-
-fit$tree_size_store
-fit$variable_importance
 ```
 
 Calling `set.seed()` controls the stochastic tree-fitting decisions. The same
@@ -64,8 +85,9 @@ seed and runtime provide the intended reproducibility level for a fit.
 
 ## Inspect the fitted object
 
-`fit_boostpm()` returns silently. The S3 methods provide a compact summary
-and diagnostic plots.
+`fit_boostpm()` is silent by default. Set `progress = "stage"` when
+stage-level progress messages are useful. The S3 methods provide a compact
+summary and diagnostic plots after fitting.
 
 ```{r inspect}
 print(fit)
@@ -79,38 +101,138 @@ Tree-size and maximum-depth diagnostics are also available.
 plot(fit, type = "tree_size")
 ```
 
-## Evaluate density
+## Evaluate and display the fitted density
 
-`predict()` returns log density by default. Set `type = "density"` for density
-values, or `type = "details"` for the cumulative mean log-density path.
+`predict()` returns log density by default. Here the fitted density is
+evaluated over a regular grid covering the support. The heat map and contours
+show the estimated joint density, with the training observations overlaid.
 
-```{r evaluate}
-evaluation_points <- rbind(
-  c(0.25, 0.75),
-  c(0.50, 0.50),
-  c(0.75, 0.25)
+```{r evaluate-density}
+grid_size <- 40L
+x1_grid <- seq(0, 1, length.out = grid_size)
+x2_grid <- seq(0, 1, length.out = grid_size)
+evaluation_grid <- expand.grid(x1 = x1_grid, x2 = x2_grid)
+
+fitted_density <- predict(
+  fit,
+  as.matrix(evaluation_grid),
+  type = "density"
+)
+density_surface <- matrix(
+  fitted_density,
+  nrow = length(x1_grid),
+  ncol = length(x2_grid)
 )
 
-log_density <- predict(fit, evaluation_points, type = "log_density")
-cbind(evaluation_points, density = exp(log_density))
+image(
+  x1_grid,
+  x2_grid,
+  density_surface,
+  col = grDevices::hcl.colors(30, palette = "YlOrRd", rev = TRUE),
+  xlab = "x1",
+  ylab = "x2",
+  main = "Fitted joint density",
+  asp = 1
+)
+contour(
+  x1_grid,
+  x2_grid,
+  density_surface,
+  add = TRUE,
+  drawlabels = FALSE,
+  col = "grey30"
+)
+points(
+  training_data,
+  pch = 16,
+  cex = 0.45,
+  col = grDevices::adjustcolor("black", alpha.f = 0.45)
+)
 ```
 
-Points outside the support have log density `-Inf`.
+Points outside the support have log density `-Inf` and density zero.
 
 ```{r outside-support}
 outside <- rbind(c(-0.10, 0.50), c(0.50, 0.50), c(1.10, 0.50))
 predict(fit, outside, type = "log_density")
 ```
 
-## Generate samples
+## Generate and compare samples
 
-The fitted tree ensemble is also a generative model. Sampling uses R's
-random-number generator, so it can be reproduced with a seed.
+The fitted tree ensemble is also a generative model. The following code draws
+1,000 observations and compares their joint distribution with the training
+data using identical axes.
 
-```{r simulate}
+```{r simulate, fig.width=7, fig.height=3.6}
 set.seed(3)
-simulate(fit, nsim = 6)
+generated_data <- simulate(fit, nsim = 1000)
+
+old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+plot(
+  training_data,
+  xlim = support[1, ],
+  ylim = support[2, ],
+  asp = 1,
+  pch = 16,
+  cex = 0.7,
+  col = grDevices::adjustcolor("black", alpha.f = 0.45),
+  xlab = "x1",
+  ylab = "x2",
+  main = "Training data"
+)
+plot(
+  generated_data,
+  xlim = support[1, ],
+  ylim = support[2, ],
+  asp = 1,
+  pch = 16,
+  cex = 0.45,
+  col = grDevices::adjustcolor("#2166AC", alpha.f = 0.35),
+  xlab = "x1",
+  ylab = "x2",
+  main = "Generated data"
+)
+par(old_par)
 ```
+
+The marginal empirical distribution functions provide a second comparison.
+Close curves indicate that the generated sample preserves the fitted marginal
+behavior of the training data.
+
+```{r compare-marginals, fig.width=7, fig.height=3.6}
+old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+for (j in seq_len(ncol(training_data))) {
+  plot(
+    stats::ecdf(training_data[, j]),
+    do.points = FALSE,
+    verticals = TRUE,
+    xlim = support[j, ],
+    lwd = 2,
+    col = "black",
+    xlab = colnames(training_data)[j],
+    ylab = "Empirical cumulative probability",
+    main = paste("Marginal", colnames(training_data)[j])
+  )
+  lines(
+    stats::ecdf(generated_data[, j]),
+    verticals = TRUE,
+    lwd = 2,
+    col = "#2166AC"
+  )
+  legend(
+    "bottomright",
+    legend = c("Training", "Generated"),
+    col = c("black", "#2166AC"),
+    lwd = 2,
+    bty = "n"
+  )
+}
+par(old_par)
+```
+
+These plots are descriptive checks rather than a formal goodness-of-fit test.
+Held-out log density or other problem-specific validation remains useful for
+applied work.
 
 ## Practical notes
 

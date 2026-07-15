@@ -1,7 +1,7 @@
 testthat::test_that("max_resol retains deepest-splittable-node semantics", {
   set.seed(10)
   invisible(capture.output(
-    fit <- boostPM::boosting(
+    fit <- boostPM::fit_boostpm(
       matrix(c(0.1, 0.3, 0.7, 0.9), ncol = 1L),
       add_noise = FALSE,
       Omega = matrix(c(0, 1), nrow = 1L),
@@ -25,7 +25,7 @@ testthat::test_that("max_resol retains deepest-splittable-node semantics", {
 testthat::test_that("split equality is assigned left during fit and evaluation", {
   set.seed(11)
   invisible(capture.output(
-    fit <- boostPM::boosting(
+    fit <- boostPM::fit_boostpm(
       matrix(c(0.25, 0.5, 0.75), ncol = 1L),
       add_noise = FALSE,
       Omega = matrix(c(0, 1), nrow = 1L),
@@ -51,7 +51,11 @@ testthat::test_that("split equality is assigned left during fit and evaluation",
     1e-15
   )
 
-  at_boundary <- boostPM::eval_density_b(fit, matrix(0.5, ncol = 1L))
+  at_boundary <- stats::predict(
+    fit,
+    matrix(0.5, ncol = 1L),
+    type = "details"
+  )
   testthat::expect_equal(
     as.numeric(at_boundary$log_densities),
     log(0.65 / 0.5),
@@ -63,7 +67,7 @@ testthat::test_that("density outside Omega has log density negative infinity", {
   fit <- make_one_split_fit(theta = 0.25, location = 0.5)
   outside <- matrix(c(-0.1, 0.25, 1.1), ncol = 1L)
 
-  result <- boostPM::eval_density_b(fit, outside)
+  result <- stats::predict(fit, outside, type = "details")
 
   testthat::expect_identical(
     as.numeric(result$log_densities),
@@ -76,7 +80,7 @@ testthat::test_that("a rejected early-stopping tree is not stored or applied", {
   data <- small_two_dimensional_data()
   set.seed(12)
   invisible(capture.output(
-    fit <- boostPM::boosting(
+    fit <- boostPM::fit_boostpm(
       data,
       add_noise = FALSE,
       Omega = cbind(c(0, 0), c(1, 1)),

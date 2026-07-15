@@ -53,7 +53,8 @@ public:
                       int nbins,
                       double eta_subsample,
                       double thresh_stop,
-                      int ntrees_wait
+                      int ntrees_wait,
+                      bool show_progress
   );
   
   //Input information
@@ -74,6 +75,7 @@ public:
   double eta_subsample;
   double thresh_stop;
   int ntrees_wait;
+  bool show_progress;
 
   int parameter_for_test;
 

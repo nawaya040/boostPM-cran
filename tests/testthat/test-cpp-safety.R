@@ -1,33 +1,37 @@
 testthat::test_that("post-processing rejects malformed support", {
-  fit <- list(tree_list = list(), Omega = matrix(1, nrow = 1L, ncol = 1L))
+  fit <- structure(
+    list(tree_list = list(), Omega = matrix(1, nrow = 1L, ncol = 1L)),
+    class = c("boostPM_fit", "list")
+  )
   testthat::expect_error(
-    boostPM::simulation_b(fit, 1L),
+    boostPM:::simulate.boostPM_fit(fit, nsim = 1L),
     "exactly two columns"
   )
 
   fit$Omega <- matrix(c(1, 1), nrow = 1L)
   testthat::expect_error(
-    boostPM::simulation_b(fit, 1L),
+    boostPM:::simulate.boostPM_fit(fit, nsim = 1L),
     "positive width"
   )
 })
 
 testthat::test_that("simulation rejects negative sizes", {
-  fit <- list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L))
+  fit <- structure(
+    list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L)),
+    class = c("boostPM_fit", "list")
+  )
   testthat::expect_error(
-    boostPM::simulation_b(fit, -1L),
+    boostPM:::simulate.boostPM_fit(fit, nsim = -1L),
     "non-negative"
   )
 })
 
 testthat::test_that("fitting handles node boundaries and round-off drift", {
   fit_raw_value <- function(value) {
-    invisible(utils::capture.output(
-      result <- boostPM:::do_boosting(
-        matrix(value, nrow = 1L, ncol = 1L),
-        1, 1, 0, 0, 0, 1, 0, 0.1, 1, 2, 1, 1, 100
-      )
-    ))
+    result <- boostPM:::do_boosting(
+      matrix(value, nrow = 1L, ncol = 1L),
+      1, 1, 0, 0, 0, 1, 0, 0.1, 1, 2, 1, 1, 100, FALSE
+    )
     result
   }
 
@@ -47,31 +51,31 @@ testthat::test_that("fitting handles node boundaries and round-off drift", {
 })
 
 testthat::test_that("density evaluation rejects incompatible points", {
-  fit <- list(
-    tree_list = list(),
-    Omega = cbind(c(0, 0), c(1, 1))
+  fit <- structure(
+    list(tree_list = list(), Omega = cbind(c(0, 0), c(1, 1))),
+    class = c("boostPM_fit", "list")
   )
   testthat::expect_error(
-    boostPM::eval_density_b(fit, matrix(0.5, nrow = 1L, ncol = 1L)),
+    stats::predict(fit, matrix(0.5, nrow = 1L, ncol = 1L)),
     "one column per support row"
   )
   testthat::expect_error(
-    boostPM::eval_density_b(fit, matrix(c(NA, 0.5), nrow = 1L)),
+    stats::predict(fit, matrix(c(NA, 0.5), nrow = 1L)),
     "finite values"
   )
 })
 
 testthat::test_that("post-processing rejects malformed serialized trees", {
-  malformed <- list(
+  malformed <- structure(list(
     tree_list = list(list(
       d = c(0L, -1L, -1L),
       l = c(0.5, -1),
       theta = c(0.5, -1, -1)
     )),
     Omega = matrix(c(0, 1), nrow = 1L)
-  )
+  ), class = c("boostPM_fit", "list"))
   testthat::expect_error(
-    boostPM::simulation_b(malformed, 1L),
+    stats::simulate(malformed, nsim = 1L),
     "equal non-zero lengths"
   )
 
@@ -81,7 +85,7 @@ testthat::test_that("post-processing rejects malformed serialized trees", {
     theta = c(0.5, -1, -1)
   )
   testthat::expect_error(
-    boostPM::eval_density_b(malformed, matrix(0.5, ncol = 1L)),
+    stats::predict(malformed, matrix(0.5, ncol = 1L)),
     "dimension outside the support"
   )
 })

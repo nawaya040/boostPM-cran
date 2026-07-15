@@ -2,7 +2,6 @@
 % Please edit documentation in R/boosting.R
 \name{fit_boostpm}
 \alias{fit_boostpm}
-\alias{boosting}
 \title{Fit a boostPM Distribution}
 \usage{
 fit_boostpm(
@@ -19,10 +18,9 @@ fit_boostpm(
   alpha = 0.9,
   beta = 0,
   precision = 1,
-  nbins = 8
+  nbins = 8,
+  progress = c("none", "stage")
 )
-
-boosting(...)
 }
 \arguments{
 \item{data}{A finite numeric matrix. Rows are observations and columns are
@@ -68,7 +66,9 @@ distribution used in split scoring.}
 \item{nbins}{Integer of at least two. Number of uniform-grid candidate split
 locations.}
 
-\item{...}{Arguments passed to the primary fitting function.}
+\item{progress}{Character string controlling progress messages. \code{"none"}
+suppresses progress output and \code{"stage"} reports each marginal fitting
+stage and the dependence stage.}
 }
 \value{
 An object of class \code{boostPM_fit}. It retains the list layout of the
@@ -79,15 +79,14 @@ diagnostics, variable importance, \code{Omega}, and elapsed fitting time.
 Fits the unsupervised tree boosting procedure of Awaya and Ma (2024).
 Marginal trees are fitted first, followed by dependence trees. The fitted
 ensemble represents a probability distribution on a rectangular support.
-
-Deprecated compatibility wrapper for [fit_boostpm()].
 }
 \details{
 If \code{Omega} is \code{NULL}, a rectangular support is constructed from the
 processed data. If \code{add_noise} is \code{TRUE}, call \code{\link[=set.seed]{set.seed()}} before fitting
 to reproduce the jitter and subsequent stochastic tree-fitting decisions.
-The function does not print fitting progress or elapsed time. Use \code{\link[=print]{print()}}
-or \code{\link[=summary]{summary()}} on the returned object to inspect the fit.
+Fitting progress is silent by default. Set \code{progress = "stage"} to report
+the current fitting stage. Elapsed time is stored in the returned object;
+use \code{\link[=print]{print()}} or \code{\link[=summary]{summary()}} to inspect the fit.
 Reproducibility is intended within a fixed R runtime. Exact equality across
 operating systems has not been established.
 }

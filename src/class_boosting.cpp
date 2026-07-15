@@ -32,7 +32,8 @@ class_boosting::class_boosting(
                      int nbins,
                      double eta_subsample,
                      double thresh_stop,
-                     int ntrees_wait
+                     int ntrees_wait,
+                     bool show_progress
 ):
   X(X),
   precision(precision),
@@ -47,7 +48,8 @@ class_boosting::class_boosting(
   nbins(nbins),
   eta_subsample(eta_subsample),
   thresh_stop(thresh_stop),
-  ntrees_wait(ntrees_wait)
+  ntrees_wait(ntrees_wait),
+  show_progress(show_progress)
 {
 
   init();
@@ -260,7 +262,7 @@ void class_boosting::boosting(){
       Rcpp::checkUserInterrupt();
       
       // print the current progress at the beginning of each step
-      if(index_tree == 0){
+      if(show_progress && index_tree == 0){
         print_progress_boosting(step);
       }
       
@@ -311,13 +313,8 @@ void class_boosting::boosting(){
       //Rcout << mean(recent_improvements) << "\n";
       
       if(mean(recent_improvements) < thresh_stop){
-        Rcout << index_tree << " trees are constructed in this step" << "\n";
         break;
       }else{
-        
-        if(index_tree == num_max_trees - 1){
-          Rcout << num_max_trees << " trees are constructed in this step" << "\n";
-        }
         
         //residualize
         for(int i=0;i<n;i++){
@@ -698,15 +695,12 @@ void class_boosting::check_max_depth( Node* node, int& depth_max){
 
 void class_boosting::print_progress_boosting(int step){
   
-  if(num_each_dim > 0){
-    if(step < d){
-      Rcout << "Estimating the marginal distribution... (" << step+1 << "/" << d << ")" << "\n"; 
-    }else if(step == d){
-      Rcout << "Estimating the dependency structure..." << "\n"; 
-    }
+  if(step < d){
+    Rcout << "Fitting marginal distribution " << step + 1 << " of " << d << "\n";
+  }else if(num_each_dim > 0){
+    Rcout << "Fitting dependence structure" << "\n";
   }else{
-    Rcout << "Estimating the joint distribution..." << "\n"; 
-    Rcout << "(There is no step for estimating the marginal distributions)" << "\n"; 
+    Rcout << "Fitting joint distribution" << "\n";
   }
   
 }

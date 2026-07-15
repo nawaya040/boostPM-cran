@@ -21,7 +21,8 @@ Rcpp::List do_boosting(arma::mat X,
          int nbins,
          double eta_subsample,
          double thresh_stop,
-         int ntrees_wait
+         int ntrees_wait,
+         bool show_progress
           ){
   
 
@@ -39,7 +40,8 @@ Rcpp::List do_boosting(arma::mat X,
                               nbins,
                               eta_subsample,
                               thresh_stop,
-                              ntrees_wait
+                              ntrees_wait,
+                              show_progress
                               );
   
   Rcpp::List out;

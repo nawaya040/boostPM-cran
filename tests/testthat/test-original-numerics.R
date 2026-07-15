@@ -43,7 +43,11 @@ testthat::test_that("small fixed-seed fit reproduces the archived numerical fixt
 
 testthat::test_that("fixed archived fit reproduces density path", {
   fit <- fit_small_archive_case()
-  result <- boostPM::eval_density_b(fit, small_two_dimensional_data())
+  result <- stats::predict(
+    fit,
+    small_two_dimensional_data(),
+    type = "details"
+  )
 
   testthat::expect_equal(
     as.numeric(result$log_densities),
@@ -61,7 +65,7 @@ testthat::test_that("fixed archived fit reproduces simulation output", {
   fit <- fit_small_archive_case()
 
   set.seed(99)
-  simulated <- boostPM::simulation_b(fit, 3L)
+  simulated <- stats::simulate(fit, nsim = 3L)
   expected <- matrix(c(
     0.547596947343305,
     0.65243520828024,
@@ -78,7 +82,7 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
   data <- matrix(c(0.1, 0.2, 0.4, 0.6, 0.8, 0.9), ncol = 1L)
   set.seed(314)
   invisible(capture.output(
-    fit <- boostPM::boosting(
+    fit <- boostPM::fit_boostpm(
       data,
       add_noise = FALSE,
       Omega = matrix(c(0, 1), nrow = 1L),
@@ -120,7 +124,7 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
   )
   testthat::expect_equal(fit$tree_list[[1]], expected_tree, tolerance = 1e-14)
 
-  density <- boostPM::eval_density_b(fit, data)
+  density <- stats::predict(fit, data, type = "details")
   testthat::expect_equal(
     as.numeric(density$log_densities),
     c(

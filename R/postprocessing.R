@@ -55,7 +55,7 @@ simulate.boostPM_fit <- function(object, nsim = 1L, seed = NULL, ...) {
 #'   one column per fitted variable.
 #' @param type Character string selecting the return value: `"log_density"`
 #'   returns log densities, `"density"` returns densities, and `"details"`
-#'   returns the legacy list containing log densities and the cumulative mean
+#'   returns a diagnostic list containing log densities and the cumulative mean
 #'   log-density path.
 #' @param ... Unused. Additional arguments are an error.
 #'
@@ -138,39 +138,4 @@ predict.boostPM_fit <- function(object,
   }
 
   exp(details$log_densities)
-}
-
-#' @rdname predict.boostPM_fit
-#' @description
-#' Deprecated compatibility wrapper for `predict(object, newdata,
-#' type = "details")`.
-#'
-#' @param list_boosting A fitted object returned by [fit_boostpm()].
-#' @param eval_points A finite numeric matrix with evaluation points in rows
-#'   and one column per fitted variable.
-#' @return A list with `log_densities` and `mean_log_dens_path`.
-#' @export
-#' @md
-eval_density_b <- function(list_boosting, eval_points) {
-  .Deprecated("predict")
-  predict.boostPM_fit(
-    list_boosting,
-    newdata = eval_points,
-    type = "details"
-  )
-}
-
-#' @rdname simulate.boostPM_fit
-#' @description
-#' Deprecated compatibility wrapper for `simulate(object, nsim)`.
-#'
-#' @param list_boosting A fitted object returned by [fit_boostpm()].
-#' @param size Non-negative integer. Number of observations to simulate.
-#' @return A numeric matrix with `size` rows and one column per fitted
-#'   variable.
-#' @export
-#' @md
-simulation_b <- function(list_boosting, size) {
-  .Deprecated("simulate")
-  simulate.boostPM_fit(list_boosting, nsim = size)
 }
