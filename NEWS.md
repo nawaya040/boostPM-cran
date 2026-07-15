@@ -1,5 +1,7 @@
 # boostPM 0.0.0.9000
 
+* Added print(), summary(), and plot() methods for boostPM_fit objects.
+  fit_boostpm() no longer prints elapsed fitting time automatically.
 * Renamed the primary public API to `fit_boostpm()`, `predict()`, and
   `simulate()`. The former `boosting()`, `eval_density_b()`, and
   `simulation_b()` functions remain as deprecated compatibility wrappers.

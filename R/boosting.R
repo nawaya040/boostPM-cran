@@ -42,6 +42,8 @@
 #' If `Omega` is `NULL`, a rectangular support is constructed from the
 #' processed data. If `add_noise` is `TRUE`, call [set.seed()] before fitting
 #' to reproduce the jitter and subsequent stochastic tree-fitting decisions.
+#' The function does not print fitting progress or elapsed time. Use [print()]
+#' or [summary()] on the returned object to inspect the fit.
 #' Reproducibility is intended within a fixed R runtime. Exact equality across
 #' operating systems has not been established.
 #'
@@ -132,7 +134,6 @@ fit_boostpm <- function(data,
   end_time <- Sys.time()
   out$time <- end_time - start_time
   class(out) <- c("boostPM_fit", "list")
-  print(end_time - start_time)
 
   out
 }

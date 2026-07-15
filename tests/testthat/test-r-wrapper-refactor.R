@@ -92,7 +92,7 @@ testthat::test_that("public fit API preserves low-level argument order", {
   testthat::expect_identical(fit$marker, "mock fit")
   testthat::expect_s3_class(fit, "boostPM_fit")
   testthat::expect_s3_class(fit$time, "difftime")
-  testthat::expect_true(any(grepl("Time difference", output, fixed = TRUE)))
+  testthat::expect_length(output, 0L)
 })
 
 testthat::test_that("S3 post-processing methods preserve argument order", {

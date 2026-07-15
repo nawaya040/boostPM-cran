@@ -86,6 +86,8 @@ Deprecated compatibility wrapper for [fit_boostpm()].
 If \code{Omega} is \code{NULL}, a rectangular support is constructed from the
 processed data. If \code{add_noise} is \code{TRUE}, call \code{\link[=set.seed]{set.seed()}} before fitting
 to reproduce the jitter and subsequent stochastic tree-fitting decisions.
+The function does not print fitting progress or elapsed time. Use \code{\link[=print]{print()}}
+or \code{\link[=summary]{summary()}} on the returned object to inspect the fit.
 Reproducibility is intended within a fixed R runtime. Exact equality across
 operating systems has not been established.
 }

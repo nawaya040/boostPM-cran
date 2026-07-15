@@ -14,6 +14,7 @@
 #' @name boostPM-package
 #' @aliases boostPM
 #' @useDynLib boostPM, .registration = TRUE
+#' @importFrom graphics barplot plot
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats predict runif simulate
 #' @md

@@ -38,3 +38,33 @@ testthat::test_that("deprecated names retain their established result forms", {
   )
   testthat::expect_named(details, c("log_densities", "mean_log_dens_path"))
 })
+
+testthat::test_that("boostPM fit methods provide compact diagnostics", {
+  fit <- list(
+    residuals_boosting = matrix(0, nrow = 2L, ncol = 4L),
+    tree_size_store = c(3L, 5L),
+    max_depth_store = c(1L, 2L),
+    variable_importance = c(0.7, 0.3),
+    tree_list = list(list(), list()),
+    Omega = cbind(c(0, 0), c(1, 1)),
+    time = structure(0.25, units = "secs", class = "difftime")
+  )
+  class(fit) <- c("boostPM_fit", "list")
+
+  summarized <- summary(fit)
+  testthat::expect_s3_class(summarized, "summary.boostPM_fit")
+  testthat::expect_identical(summarized$n_observations, 4L)
+  testthat::expect_identical(summarized$n_variables, 2L)
+  testthat::expect_identical(summarized$n_trees, 2L)
+
+  output <- capture.output(print(fit))
+  testthat::expect_true(any(grepl("boostPM fit", output, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Elapsed time:", output, fixed = TRUE)))
+
+  pdf_file <- tempfile(fileext = ".pdf")
+  grDevices::pdf(pdf_file)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  testthat::expect_silent(plot(fit))
+  testthat::expect_silent(plot(fit, type = "tree_size"))
+  testthat::expect_silent(plot(fit, type = "max_depth"))
+})
