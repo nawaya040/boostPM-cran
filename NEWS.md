@@ -14,7 +14,8 @@
 * Added optional stage-level fitting messages through
   `progress = "stage"`; fitting remains silent by default.
 
-* Expanded the introductory vignette with fitted-density and
+* Expanded the introductory vignette with two nonlinear simulation scenarios,
+  paper-oriented accuracy controls, fitted-density comparisons, and
   generated-sample visualizations.
 
 # boostPM 0.0.0.9000

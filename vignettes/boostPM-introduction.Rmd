@@ -10,229 +10,400 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   comment = "#>",
-  fig.width = 6.5,
-  fig.height = 5,
-  fig.align = "center"
+  fig.width = 7,
+  fig.height = 4.8,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
 )
+
+density_palette <- grDevices::hcl.colors(32, "YlOrRd", rev = TRUE)
+
+draw_density <- function(x1, x2, values, title, display_cap) {
+  surface <- matrix(values, nrow = length(x1), ncol = length(x2))
+  surface <- pmin(surface, display_cap)
+  image(
+    x1,
+    x2,
+    surface,
+    zlim = c(0, display_cap),
+    col = density_palette,
+    xlim = c(0, 1),
+    ylim = c(0, 1),
+    asp = 1,
+    xlab = "x1",
+    ylab = "x2",
+    main = title
+  )
+  contour(
+    x1,
+    x2,
+    surface,
+    add = TRUE,
+    drawlabels = FALSE,
+    col = "grey30",
+    nlevels = 7
+  )
+}
+
+draw_points <- function(x, title, color = "black", cex = 0.35) {
+  plot(
+    x,
+    xlim = c(0, 1),
+    ylim = c(0, 1),
+    xaxs = "i",
+    yaxs = "i",
+    xaxt = "n",
+    yaxt = "n",
+    asp = 1,
+    pch = 16,
+    cex = cex,
+    col = grDevices::adjustcolor(color, alpha.f = 0.35),
+    xlab = "x1",
+    ylab = "x2",
+    main = title
+  )
+  axis(1, at = seq(0, 1, by = 0.2))
+  axis(2, at = seq(0, 1, by = 0.2))
+}
 ```
 
 The `boostPM` package estimates probability distributions with an ensemble
-of tree-based probability measures. This vignette fits a two-dimensional
-distribution, evaluates the fitted density on a grid, and compares observations
-generated from the fit with the training data.
+of tree-based probability measures. The method is useful when a distribution
+contains nonlinear dependence, multimodality, or other structure that is
+difficult to describe with a single parametric family.
 
-## Data and support
+This vignette considers two distributions on the unit square:
 
-Observations occupy rows and variables occupy columns. The example uses a
-Gaussian copula to create dependent variables with beta marginal
-distributions. The support is the unit square. Training observations must be
-strictly inside a user-supplied support matrix.
+1. a sinusoidal conditional-density ridge;
+2. a curved conditionally bimodal density.
 
-```{r data}
+For each example, we fit an ensemble, evaluate its density on a grid, and draw
+new observations from the fitted distribution.
+
+## Simulated training data
+
+Observations occupy rows and variables occupy columns. Both examples use
+2,400 observations. The larger sample produces smoother fitted densities while
+remaining practical for routine package checks.
+
+### Scenario 1: sinusoidal ridge
+
+The first coordinate is uniform. The conditional mean of the second coordinate
+follows a sine wave. This produces nonlinear dependence that is not well
+represented by an elliptical distribution.
+
+```{r sinusoidal-data}
 library(boostPM)
 
-set.seed(1)
-n_training <- 200L
-dependence <- 0.7
-latent_1 <- rnorm(n_training)
-latent_2 <- dependence * latent_1 +
-  sqrt(1 - dependence^2) * rnorm(n_training)
-
-training_data <- cbind(
-  x1 = qbeta(pnorm(latent_1), shape1 = 2, shape2 = 5),
-  x2 = qbeta(pnorm(latent_2), shape1 = 5, shape2 = 2)
-)
+n_training <- 2400L
 support <- cbind(c(0, 0), c(1, 1))
 
-plot(
-  training_data,
-  xlim = support[1, ],
-  ylim = support[2, ],
-  asp = 1,
-  pch = 16,
-  col = grDevices::adjustcolor("black", alpha.f = 0.45),
-  xlab = "x1",
-  ylab = "x2",
-  main = "Training data"
+set.seed(11001)
+x1 <- runif(n_training)
+mu <- 0.15 + 0.70 * (0.5 + 0.5 * sin(2 * pi * x1))
+concentration <- 40
+x2 <- rbeta(
+  n_training,
+  mu * concentration,
+  (1 - mu) * concentration
+)
+sinusoidal_data <- cbind(x1 = x1, x2 = x2)
+
+sinusoidal_density <- function(x1, x2) {
+  mu <- 0.15 + 0.70 * (0.5 + 0.5 * sin(2 * pi * x1))
+  dbeta(x2, mu * concentration, (1 - mu) * concentration)
+}
+```
+
+### Scenario 2: curved bimodality
+
+Two conditional beta ridges move toward one another as the first coordinate
+increases. The distribution combines nonlinear dependence with conditional
+bimodality.
+
+```{r curved-data}
+set.seed(12001)
+x1 <- runif(n_training)
+component <- rbinom(n_training, size = 1L, prob = 0.5)
+mu_lower <- 0.15 + 0.45 * x1^2
+mu_upper <- 0.85 - 0.45 * x1^2
+mu <- ifelse(component == 0L, mu_lower, mu_upper)
+concentration_curved <- 50
+x2 <- rbeta(
+  n_training,
+  mu * concentration_curved,
+  (1 - mu) * concentration_curved
+)
+curved_data <- cbind(x1 = x1, x2 = x2)
+
+curved_density <- function(x1, x2) {
+  mu_lower <- 0.15 + 0.45 * x1^2
+  mu_upper <- 0.85 - 0.45 * x1^2
+  0.5 * dbeta(
+    x2,
+    mu_lower * concentration_curved,
+    (1 - mu_lower) * concentration_curved
+  ) +
+    0.5 * dbeta(
+      x2,
+      mu_upper * concentration_curved,
+      (1 - mu_upper) * concentration_curved
+    )
+}
+```
+
+```{r training-data-plot, fig.width=7, fig.height=3.6}
+old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+draw_points(sinusoidal_data, "Sinusoidal ridge")
+draw_points(curved_data, "Curved bimodality")
+par(old_par)
+```
+
+## Fit the ensembles
+
+The fitting controls follow the accuracy-oriented configuration used in the
+paper and its public experiment code. The marginal stage is capped at 100
+trees per dimension, and the dependence stage is capped at 5,000 trees. A
+learning rate of 0.1 is combined with adaptive stopping based on the most
+recent 50 validation improvements.
+
+The caps are upper limits. Adaptive stopping will usually select substantially
+fewer trees.
+
+```{r fit-sinusoidal}
+set.seed(31001)
+fit_sinusoidal <- fit_boostpm(
+  sinusoidal_data,
+  add_noise = FALSE,
+  Omega = support,
+  ntree_max_marginal = 100,
+  ntree_max_dependence = 5000,
+  c0 = 0.1,
+  gamma = 0.5,
+  max_resol = 15,
+  min_obs = 10,
+  early_stop = c(0, 50),
+  nbins = 100,
+  alpha = 0.9,
+  beta = 0,
+  precision = 1
 )
 ```
 
-## Fit an ensemble
-
-The number of marginal and dependence trees controls the two fitting stages.
-The settings below are deliberately moderate so that the vignette remains
-suitable for routine package checks. Applied analyses should select tuning
-parameters using held-out predictive performance.
-
-```{r fit}
-set.seed(2)
-fit <- fit_boostpm(
-  training_data,
+```{r fit-curved}
+set.seed(32001)
+fit_curved <- fit_boostpm(
+  curved_data,
   add_noise = FALSE,
   Omega = support,
-  ntree_max_marginal = 6,
-  ntree_max_dependence = 12,
+  ntree_max_marginal = 100,
+  ntree_max_dependence = 5000,
   c0 = 0.1,
   gamma = 0.5,
-  max_resol = 2,
-  min_obs = 5,
-  nbins = 6
+  max_resol = 15,
+  min_obs = 10,
+  early_stop = c(0, 50),
+  nbins = 100,
+  alpha = 0.9,
+  beta = 0,
+  precision = 1
 )
 ```
 
 Calling `set.seed()` controls the stochastic tree-fitting decisions. The same
 seed and runtime provide the intended reproducibility level for a fit.
 
-## Inspect the fitted object
+## Inspect fitted objects
 
-`fit_boostpm()` is silent by default. Set `progress = "stage"` when
-stage-level progress messages are useful. The S3 methods provide a compact
-summary and diagnostic plots after fitting.
+`fit_boostpm()` is silent by default. Set `progress = "stage"` when stage-level
+messages are useful. The fitted object supports standard S3 methods.
 
 ```{r inspect}
-print(fit)
-summary(fit)
-plot(fit, type = "variable_importance")
+print(fit_sinusoidal)
+summary(fit_curved)
 ```
 
-Tree-size and maximum-depth diagnostics are also available.
+Variable-importance, tree-size, and maximum-depth plots are available through
+`plot()`.
 
-```{r plot-tree-size}
-plot(fit, type = "tree_size")
+```{r variable-importance, fig.width=6.5, fig.height=4.5}
+plot(fit_curved, type = "variable_importance")
 ```
 
-## Evaluate and display the fitted density
+## Evaluate the fitted densities
 
-`predict()` returns log density by default. Here the fitted density is
-evaluated over a regular grid covering the support. The heat map and contours
-show the estimated joint density, with the training observations overlaid.
+`predict()` returns log density by default. Here both fitted densities are
+evaluated on an 80 by 80 midpoint grid. Midpoints avoid placing evaluations
+exactly on the support boundary.
 
-```{r evaluate-density}
-grid_size <- 40L
-x1_grid <- seq(0, 1, length.out = grid_size)
-x2_grid <- seq(0, 1, length.out = grid_size)
-evaluation_grid <- expand.grid(x1 = x1_grid, x2 = x2_grid)
+```{r density-evaluation}
+grid_size <- 80L
+x1_grid <- (seq_len(grid_size) - 0.5) / grid_size
+x2_grid <- (seq_len(grid_size) - 0.5) / grid_size
+evaluation_grid <- as.matrix(expand.grid(
+  x1 = x1_grid,
+  x2 = x2_grid
+))
 
-fitted_density <- predict(
-  fit,
-  as.matrix(evaluation_grid),
+fitted_sinusoidal <- predict(
+  fit_sinusoidal,
+  evaluation_grid,
   type = "density"
 )
-density_surface <- matrix(
-  fitted_density,
-  nrow = length(x1_grid),
-  ncol = length(x2_grid)
+fitted_curved <- predict(
+  fit_curved,
+  evaluation_grid,
+  type = "density"
 )
 
-image(
-  x1_grid,
-  x2_grid,
-  density_surface,
-  col = grDevices::hcl.colors(30, palette = "YlOrRd", rev = TRUE),
-  xlab = "x1",
-  ylab = "x2",
-  main = "Fitted joint density",
-  asp = 1
+true_sinusoidal <- sinusoidal_density(
+  evaluation_grid[, 1],
+  evaluation_grid[, 2]
 )
-contour(
-  x1_grid,
-  x2_grid,
-  density_surface,
-  add = TRUE,
-  drawlabels = FALSE,
-  col = "grey30"
-)
-points(
-  training_data,
-  pch = 16,
-  cex = 0.45,
-  col = grDevices::adjustcolor("black", alpha.f = 0.45)
+true_curved <- curved_density(
+  evaluation_grid[, 1],
+  evaluation_grid[, 2]
 )
 ```
+
+The true and fitted panels share a color scale within each scenario. Values
+above the scenario-specific 99th percentile are clipped for display only.
+
+```{r density-comparison, fig.width=9, fig.height=6.1}
+sinusoidal_cap <- as.numeric(stats::quantile(
+  c(true_sinusoidal, fitted_sinusoidal),
+  0.99,
+  names = FALSE
+))
+curved_cap <- as.numeric(stats::quantile(
+  c(true_curved, fitted_curved),
+  0.99,
+  names = FALSE
+))
+
+old_par <- par(mfrow = c(2, 3), mar = c(3.5, 3.5, 2.8, 0.8))
+draw_points(sinusoidal_data, "Training: sinusoidal")
+draw_density(
+  x1_grid,
+  x2_grid,
+  true_sinusoidal,
+  "True density",
+  sinusoidal_cap
+)
+draw_density(
+  x1_grid,
+  x2_grid,
+  fitted_sinusoidal,
+  "Fitted density",
+  sinusoidal_cap
+)
+draw_points(curved_data, "Training: bimodal")
+draw_density(
+  x1_grid,
+  x2_grid,
+  true_curved,
+  "True density",
+  curved_cap
+)
+draw_density(
+  x1_grid,
+  x2_grid,
+  fitted_curved,
+  "Fitted density",
+  curved_cap
+)
+par(old_par)
+```
+
+The estimates recover the sinusoidal ridge and the two curved modes without
+specifying a parametric joint distribution. Local step-like contours reflect
+the tree-based representation.
 
 Points outside the support have log density `-Inf` and density zero.
 
 ```{r outside-support}
 outside <- rbind(c(-0.10, 0.50), c(0.50, 0.50), c(1.10, 0.50))
-predict(fit, outside, type = "log_density")
+predict(fit_curved, outside, type = "log_density")
 ```
 
 ## Generate and compare samples
 
-The fitted tree ensemble is also a generative model. The following code draws
-1,000 observations and compares their joint distribution with the training
-data using identical axes.
+The fitted ensemble is also a generative model. The following calls draw
+5,000 observations from each fit.
 
-```{r simulate, fig.width=7, fig.height=3.6}
-set.seed(3)
-generated_data <- simulate(fit, nsim = 1000)
+```{r simulate}
+set.seed(41001)
+generated_sinusoidal <- simulate(fit_sinusoidal, nsim = 5000)
 
-old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
-plot(
-  training_data,
-  xlim = support[1, ],
-  ylim = support[2, ],
-  asp = 1,
-  pch = 16,
-  cex = 0.7,
-  col = grDevices::adjustcolor("black", alpha.f = 0.45),
-  xlab = "x1",
-  ylab = "x2",
-  main = "Training data"
+set.seed(42001)
+generated_curved <- simulate(fit_curved, nsim = 5000)
+```
+
+```{r generated-joint-plot, fig.width=8, fig.height=7.2}
+old_par <- par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+draw_points(sinusoidal_data, "Training: sinusoidal")
+draw_points(
+  generated_sinusoidal,
+  "Generated: sinusoidal",
+  color = "#2166AC",
+  cex = 0.25
 )
-plot(
-  generated_data,
-  xlim = support[1, ],
-  ylim = support[2, ],
-  asp = 1,
-  pch = 16,
-  cex = 0.45,
-  col = grDevices::adjustcolor("#2166AC", alpha.f = 0.35),
-  xlab = "x1",
-  ylab = "x2",
-  main = "Generated data"
+draw_points(curved_data, "Training: bimodal")
+draw_points(
+  generated_curved,
+  "Generated: bimodal",
+  color = "#2166AC",
+  cex = 0.25
 )
 par(old_par)
 ```
 
-The marginal empirical distribution functions provide a second comparison.
-Close curves indicate that the generated sample preserves the fitted marginal
-behavior of the training data.
+The generated observations preserve the nonlinear joint structures visible in
+the training samples. Marginal empirical distribution functions provide a
+second comparison.
 
-```{r compare-marginals, fig.width=7, fig.height=3.6}
-old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
-for (j in seq_len(ncol(training_data))) {
-  plot(
-    stats::ecdf(training_data[, j]),
-    do.points = FALSE,
-    verticals = TRUE,
-    xlim = support[j, ],
-    lwd = 2,
-    col = "black",
-    xlab = colnames(training_data)[j],
-    ylab = "Empirical cumulative probability",
-    main = paste("Marginal", colnames(training_data)[j])
-  )
-  lines(
-    stats::ecdf(generated_data[, j]),
-    verticals = TRUE,
-    lwd = 2,
-    col = "#2166AC"
-  )
-  legend(
-    "bottomright",
-    legend = c("Training", "Generated"),
-    col = c("black", "#2166AC"),
-    lwd = 2,
-    bty = "n"
-  )
+```{r marginal-comparison, fig.width=8, fig.height=7.2}
+data_pairs <- list(
+  list("Sinusoidal", sinusoidal_data, generated_sinusoidal),
+  list("Curved bimodality", curved_data, generated_curved)
+)
+
+old_par <- par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+for (data_pair in data_pairs) {
+  for (j in seq_len(2L)) {
+    plot(
+      stats::ecdf(data_pair[[2]][, j]),
+      do.points = FALSE,
+      verticals = TRUE,
+      xlim = support[j, ],
+      lwd = 2,
+      col = "black",
+      xlab = colnames(data_pair[[2]])[j],
+      ylab = "Empirical cumulative probability",
+      main = paste(data_pair[[1]], paste0("x", j))
+    )
+    lines(
+      stats::ecdf(data_pair[[3]][, j]),
+      verticals = TRUE,
+      lwd = 2,
+      col = "#2166AC"
+    )
+    legend(
+      "bottomright",
+      legend = c("Training", "Generated"),
+      col = c("black", "#2166AC"),
+      lwd = 2,
+      bty = "n"
+    )
+  }
 }
 par(old_par)
 ```
 
-These plots are descriptive checks rather than a formal goodness-of-fit test.
-Held-out log density or other problem-specific validation remains useful for
-applied work.
+These plots are descriptive checks rather than formal goodness-of-fit tests.
+Applied analyses should use held-out predictive log density or another
+problem-specific validation criterion when selecting tuning parameters.
 
 ## Practical notes
 
@@ -240,8 +411,9 @@ applied work.
 - `Omega` must have two columns and positive width in each dimension.
 - `nbins` controls the uniform candidate split grid and must be at least two.
 - `c0` is strictly between zero and one; `gamma` is non-negative.
-- Larger experiments and tuning should use held-out predictive log density,
-  following the numerical evaluation in Awaya and Ma (2024).
+- More trees and deeper weak learners increase flexibility and computation.
+- The fitting controls used here prioritize illustration accuracy. Applied
+  tuning should use held-out predictive performance.
 
 ## References
 
