@@ -1,3 +1,13 @@
+# boostPM 0.1.0
+
+* First CRAN submission candidate.
+
+* Provides the public fitting interface fit_boostpm(), S3 methods for fitted
+  objects, prediction through predict(), and simulation through simulate().
+
+* Preserves the archived research implementation in original/ while providing
+  a validated, portable package implementation.
+
 # boostPM 0.0.0.9000
 
 * Added print(), summary(), and plot() methods for boostPM_fit objects.

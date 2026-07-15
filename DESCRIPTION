@@ -1,7 +1,7 @@
 Package: boostPM
 Type: Package
 Title: Unsupervised Tree Boosting for Learning Probability Distributions
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: person("Naoki", "Awaya", role = c("aut", "cre"),
     email = "nawaya@waseda.jp")
 Description: Implements the unsupervised tree boosting method for learning

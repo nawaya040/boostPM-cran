@@ -1,4 +1,5 @@
 ^AGENTS\.md$
+^cran-comments\.md$
 ^LICENSE\.md$
 ^\.agents(/|$)
 ^\.sandbox(/|$)
