@@ -1,19 +1,16 @@
 citHeader("To cite boostPM in publications, please use:")
 
-pkg <- utils::packageDescription("boostPM")
-
 bibentry(
   bibtype = "Manual",
   key = "boostPM",
   title = "boostPM: Unsupervised Tree Boosting for Learning Probability Distributions",
   author = person("Naoki", "Awaya"),
   year = "2026",
-  note = paste("R package version", pkg$Version),
   url = "https://github.com/nawaya040/boostPM-cran",
   textVersion = paste(
     "Awaya, N. (2026).",
     "boostPM: Unsupervised Tree Boosting for Learning Probability Distributions.",
-    paste0("R package version ", pkg$Version, ".")
+    "R package."
   )
 )
 
