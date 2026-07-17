@@ -47,16 +47,15 @@ fit_arguments <- function(data) {
     data = data,
     add_noise = FALSE,
     Omega = cbind(rep(0, ncol(data)), rep(1, ncol(data))),
-    ntree_max_marginal = 5L,
-    ntree_max_dependence = 10L,
+    max_marginal_trees = 5L,
+    max_dependence_trees = 10L,
     c0 = 0.1,
     gamma = 0.5,
-    max_resol = 2L,
-    min_obs = 10L,
+    max_split_depth = 2L,
+    min_node_observations = 10L,
     early_stop = NULL,
-    alpha = 0.9,
-    beta = 0,
-    nbins = 8L
+    prior_split_prob = 0.9,
+    n_bins = 8L
   )
 }
 

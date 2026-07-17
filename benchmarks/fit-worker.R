@@ -31,17 +31,29 @@ fit_once <- function(case, data, seed) {
     data = data,
     add_noise = FALSE,
     Omega = cbind(rep(0, case$d), rep(1, case$d)),
-    ntree_max_marginal = case$marginal,
-    ntree_max_dependence = case$dependence,
     c0 = 0.1,
     gamma = 0.1,
-    max_resol = 5,
-    min_obs = 5,
-    early_stop = NULL,
-    alpha = 0.9,
-    beta = 0,
-    nbins = case$nbins
+    early_stop = NULL
   )
+  if ("max_marginal_trees" %in% names(formals(boostPM::fit_boostpm))) {
+    arguments$max_marginal_trees <- case$marginal
+    arguments$max_dependence_trees <- case$dependence
+    arguments$max_split_depth <- 5
+    arguments$min_node_observations <- 5
+    arguments$n_bins <- case$nbins
+  } else {
+    arguments$ntree_max_marginal <- case$marginal
+    arguments$ntree_max_dependence <- case$dependence
+    arguments$max_resol <- 5
+    arguments$min_obs <- 5
+    arguments$nbins <- case$nbins
+  }
+  if ("prior_split_prob" %in% names(formals(boostPM::fit_boostpm))) {
+    arguments$prior_split_prob <- 0.9
+  } else {
+    arguments$alpha <- 0.9
+    arguments$beta <- 0
+  }
   if ("max_n_var" %in% names(formals(boostPM::fit_boostpm))) {
     arguments$max_n_var <- case$d
   }
@@ -71,9 +83,9 @@ for (case in cases) {
       seed <- 900000L + case$n + 1000L * repetition + iteration
       fit <- fit_once(case, data, seed)
       checksums[[iteration]] <- paste(
-        sprintf("%.17g", sum(fit$residuals_boosting)),
+        sprintf("%.17g", sum(fit$residual_coordinates)),
         sprintf("%.17g", sum(fit$variable_importance)),
-        length(fit$tree_list),
+        length(fit$trees),
         sep = ":"
       )
     }

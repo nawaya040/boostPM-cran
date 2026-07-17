@@ -15,14 +15,20 @@ one column per fitted variable.}
 \item{type}{Character string selecting the return value: \code{"log_density"}
 returns log densities, \code{"density"} returns densities, and \code{"details"}
 returns a diagnostic list containing log densities and the cumulative mean
-log-density path.}
+log-density path across the fitted trees.}
 
 \item{...}{Unused. Additional arguments are an error.}
 }
 \value{
 For \code{type = "log_density"} or \code{type = "density"}, a numeric vector
-with one entry per row of \code{newdata}. For \code{type = "details"}, a list with
-components \code{log_densities} and \code{mean_log_dens_path}.
+with one entry per row of \code{newdata}, in the original row order. For
+\code{type = "details"}, a list containing:
+\describe{
+\item{log_density}{The same vector returned by \code{type = "log_density"}.}
+\item{mean_log_density_path}{A numeric vector with one entry per fitted
+tree. Entry \code{k} is the mean log density over all rows of \code{newdata} after
+the first \code{k} trees have been applied.}
+}
 }
 \description{
 Evaluates the probability density represented by a fitted tree ensemble at
@@ -31,22 +37,38 @@ supplied points.
 \details{
 Points outside the fitted rectangular support receive log density \code{-Inf} and
 density zero. At a split point, evaluation follows the left-child convention
-in the method specification.
+in the method specification. Because \code{mean_log_density_path} averages over
+every row of \code{newdata}, the entire path is \code{-Inf} when any row lies outside
+the support.
 }
 \examples{
-set.seed(10)
-x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+set.seed(42)
+n <- 400L
+x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+set.seed(123)
 fit <- fit_boostpm(
   x,
   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-  add_noise = FALSE,
-  ntree_max_marginal = 1,
-  ntree_max_dependence = 1,
-  max_resol = 1
+  max_marginal_trees = 100,
+  max_dependence_trees = 1000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
+  c0 = 0.1,
+  gamma = 0.5,
+  add_noise = FALSE
 )
-evaluation_points <- matrix(c(0.25, 0.25, 0.50, 0.50),
-                            ncol = 2, byrow = TRUE)
-predict(fit, evaluation_points, type = "density")
+
+grid <- seq(0.01, 0.99, length.out = 50L)
+evaluation_grid <- as.matrix(expand.grid(x1 = grid, x2 = grid))
+fitted_density <- matrix(
+  predict(fit, evaluation_grid, type = "density"),
+  nrow = length(grid)
+)
+graphics::image(grid, grid, fitted_density, xlab = "x1", ylab = "x2")
+graphics::contour(
+  grid, grid, fitted_density, add = TRUE, drawlabels = FALSE
+)
 
 }

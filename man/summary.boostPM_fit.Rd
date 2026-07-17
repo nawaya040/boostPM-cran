@@ -2,39 +2,52 @@
 % Please edit documentation in R/fit-methods.R
 \name{summary.boostPM_fit}
 \alias{summary.boostPM_fit}
-\alias{print.summary.boostPM_fit}
 \title{Summarize a Fitted boostPM Distribution}
 \usage{
 \method{summary}{boostPM_fit}(object, ...)
-
-\method{print}{summary.boostPM_fit}(x, ...)
 }
 \arguments{
 \item{object}{A fitted object returned by \code{\link[=fit_boostpm]{fit_boostpm()}}.}
 
 \item{...}{Unused.}
-
-\item{x}{A summary.boostPM_fit object.}
 }
 \value{
-An object of class summary.boostPM_fit containing the number of
-observations, variables, and trees; support; tree-size and depth
-diagnostics; variable importance; and elapsed fitting time when available.
+An object of class \code{summary.boostPM_fit}, represented as a list
+containing:
+\describe{
+\item{call}{The matched call used to fit the model.}
+\item{n_observations}{Number of training observations, or \code{NA} when it
+cannot be recovered from the fitted object.}
+\item{n_variables}{Number of fitted variables.}
+\item{n_trees}{Number of accepted trees.}
+\item{support}{The original-scale lower and upper support limits.}
+\item{tree_diagnostics}{The per-tree diagnostic data frame returned by
+\code{\link[=fit_boostpm]{fit_boostpm()}}.}
+\item{variable_importance}{Accumulated improvement attributed to each
+variable.}
+\item{elapsed_time}{Elapsed fitting time as a \code{difftime} object.}
+}
 }
 \description{
 Extracts compact structural diagnostics from a boostPM_fit object.
 }
 \examples{
-set.seed(10)
-x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+set.seed(42)
+n <- 400L
+x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+set.seed(123)
 fit <- fit_boostpm(
   x,
   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-  add_noise = FALSE,
-  ntree_max_marginal = 1,
-  ntree_max_dependence = 1,
-  max_resol = 1
+  max_marginal_trees = 100,
+  max_dependence_trees = 1000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
+  c0 = 0.1,
+  gamma = 0.5,
+  add_noise = FALSE
 )
 summary(fit)
 

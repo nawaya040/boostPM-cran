@@ -5,12 +5,12 @@ testthat::test_that("one-split density agrees with hand calculation", {
   result <- stats::predict(fit, points, type = "details")
 
   testthat::expect_equal(
-    as.numeric(result$log_densities),
+    as.numeric(result$log_density),
     log(c(0.25 / 0.5, 0.75 / 0.5)),
     tolerance = 1e-15
   )
   testthat::expect_equal(
-    as.numeric(result$mean_log_dens_path),
+    as.numeric(result$mean_log_density_path),
     mean(log(c(0.5, 1.5))),
     tolerance = 1e-15
   )
@@ -35,11 +35,11 @@ testthat::test_that("one-split inverse transform agrees with hand calculation", 
 
 testthat::test_that("two-tree density uses residual composition order", {
   fit <- structure(list(
-    tree_list = list(
-      make_one_split_fit(theta = 0.25)$tree_list[[1]],
-      make_one_split_fit(theta = 0.75)$tree_list[[1]]
+    trees = list(
+      make_one_split_fit(theta = 0.25)$trees[[1]],
+      make_one_split_fit(theta = 0.75)$trees[[1]]
     ),
-    Omega = matrix(c(0, 1), nrow = 1L)
+    support = matrix(c(0, 1), nrow = 1L)
   ), class = c("boostPM_fit", "list"))
 
   result <- stats::predict(
@@ -49,12 +49,12 @@ testthat::test_that("two-tree density uses residual composition order", {
   )
 
   testthat::expect_equal(
-    as.numeric(result$log_densities),
+    as.numeric(result$log_density),
     rep(log(0.75), 2L),
     tolerance = 1e-15
   )
   testthat::expect_equal(
-    as.numeric(result$mean_log_dens_path),
+    as.numeric(result$mean_log_density_path),
     c(mean(log(c(0.5, 1.5))), log(0.75)),
     tolerance = 1e-15
   )
@@ -71,7 +71,7 @@ testthat::test_that("support Jacobian is subtracted on the original scale", {
   result <- stats::predict(fit, points, type = "details")
 
   testthat::expect_equal(
-    as.numeric(result$log_densities),
+    as.numeric(result$log_density),
     log(c(0.5, 1.5)) - log(4),
     tolerance = 1e-15
   )

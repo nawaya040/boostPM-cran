@@ -28,10 +28,31 @@
   the exact held-out early-stopping rule, support and tie handling, split-prior
   interpretation, and reproducibility guidance.
 
-* Replaced zero-tree and hand-constructed fitted-object examples throughout
-  the manual with small reproducible two-dimensional fits that demonstrate
-  fitting, diagnostics, density evaluation, and simulation while remaining
-  suitable for CRAN example checks.
+* Renamed the remaining implementation-oriented fitting controls to
+  `max_marginal_trees`, `max_dependence_trees`, `n_bins`, `max_split_depth`,
+  and `min_node_observations`. The superseded public names are not retained.
+
+* Replaced miniature fitted-object examples throughout the manual with
+  reproducible two-dimensional fits using 400 observations, 100 marginal-tree
+  candidates per variable, 1,000 dependence-tree candidates, 100 split bins,
+  and a maximum split depth of 15. Prediction examples evaluate a 50-by-50
+  grid, and simulation examples generate 500 observations. All examples remain
+  suitable for CRAN checks.
+
+* Replaced provisional fitted-object component names with descriptive names:
+  `trees`, `residual_coordinates`, `tree_diagnostics`, `variable_importance`,
+  `heldout_diagnostics`, `support`, and `elapsed_time`. Per-tree and held-out
+  diagnostics now include marginal-versus-dependence stage labels, marginal
+  variable labels, and held-out acceptance status.
+  `variable_importance` is now a numeric vector named from the data columns
+  when available. Fits also store the matched `call` and validated `control`
+  settings. The provisional component names are not retained as aliases.
+
+* Clarified and separated `summary()` and summary-printing documentation,
+  preserved variable names in printed importance values and simulated samples,
+  renamed detailed prediction components to `log_density` and
+  `mean_log_density_path`, and made documented `barplot()` label overrides
+  safe in `plot()`.
 
 * Expanded the introductory vignette with an independent beta reference case,
   a nonlinear sinusoidal scenario, paper-oriented accuracy controls,
@@ -58,8 +79,7 @@
   candidate equality remains assigned left, round-off-sized endpoint drift is
   clamped using a documented tolerance, and larger interval violations raise
   explicit errors.
-* Added the `boostPM_fit` S3 class while retaining the archived list layout and
-  accepting compatible unclassed fitted lists in post-processing.
+* Added the `boostPM_fit` S3 class and structured post-processing methods.
 * Added reproducible isolated-kernel and end-to-end benchmarks for the
   boundary-safe binning change. Arithmetic lookup reduced full-fit time by
   about 8%--33% relative to the preceding binary-search implementation; its

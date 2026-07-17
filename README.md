@@ -7,7 +7,7 @@ distribution.
 
 This repository is an in-development, CRAN-oriented package implementation.
 The immutable research implementation used for the published work is retained
-under `original/` for numerical provenance.
+under `original/`, and documented regression cases are compared against it.
 
 ## Installation
 
@@ -37,14 +37,14 @@ set.seed(2)
 fit <- fit_boostpm(
   data,
   Omega = support,
-  add_noise = FALSE,
-  ntree_max_marginal = 2,
-  ntree_max_dependence = 2,
-  nbins = 4,
+  max_marginal_trees = 2,
+  max_dependence_trees = 2,
+  n_bins = 4,
+  max_split_depth = 1,
+  min_node_observations = 2,
   c0 = 0.1,
   gamma = 0.5,
-  max_resol = 1,
-  min_obs = 2
+  add_noise = FALSE
 )
 
 log_density <- predict(fit, data, type = "log_density")
@@ -54,8 +54,9 @@ set.seed(3)
 simulated <- simulate(fit, nsim = 10)
 ```
 
-The fit is a `boostPM_fit` object whose list components include serialized
-trees, residuals, support, and variable-importance diagnostics.
+The fit is a `boostPM_fit` object whose components include serialized trees,
+residual coordinates, per-tree and held-out diagnostics, support, and variable
+importance.
 
 ## Inspect a fitted model
 
@@ -68,8 +69,8 @@ summary(fit)
 plot(fit, type = "variable_importance")
 ```
 
-The plot method also supports `type = "tree_size"` and
-`type = "max_depth"`.
+The plot method also supports `type = "tree_node_counts"` and
+`type = "tree_depths"`.
 
 ## Input and reproducibility notes
 

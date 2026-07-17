@@ -108,31 +108,35 @@
   invisible(data)
 }
 
-.boostpm_validate_fit_controls <- function(add_noise,
-                                           ntree_max_marginal,
-                                           ntree_max_dependence,
+.boostpm_validate_fit_controls <- function(max_marginal_trees,
+                                           max_dependence_trees,
+                                           n_bins,
+                                           max_split_depth,
+                                           min_node_observations,
                                            c0,
                                            gamma,
-                                           max_resol,
-                                           min_obs,
                                            early_stop,
                                            prior_split_prob,
-                                           nbins) {
+                                           add_noise) {
   .boostpm_validate_flag(add_noise, "add_noise")
 
   .boostpm_validate_count(
-    ntree_max_marginal,
-    "ntree_max_marginal",
+    max_marginal_trees,
+    "max_marginal_trees",
     minimum = 0L
   )
   .boostpm_validate_count(
-    ntree_max_dependence,
-    "ntree_max_dependence",
+    max_dependence_trees,
+    "max_dependence_trees",
     minimum = 0L
   )
-  .boostpm_validate_count(max_resol, "max_resol", minimum = 0L)
-  .boostpm_validate_count(min_obs, "min_obs", minimum = 1L)
-  .boostpm_validate_count(nbins, "nbins", minimum = 2L)
+  .boostpm_validate_count(n_bins, "n_bins", minimum = 2L)
+  .boostpm_validate_count(max_split_depth, "max_split_depth", minimum = 0L)
+  .boostpm_validate_count(
+    min_node_observations,
+    "min_node_observations",
+    minimum = 1L
+  )
 
   for (name in c("c0", "gamma", "prior_split_prob")) {
     .boostpm_validate_scalar(get(name), name)
@@ -170,7 +174,7 @@
     )
   }
 
-  required <- c("tree_list", "Omega")
+  required <- c("trees", "support")
   missing_components <- setdiff(required, names(object))
   if (length(missing_components) > 0L) {
     .boostpm_stop_invalid(sprintf(
@@ -180,11 +184,11 @@
     ))
   }
 
-  if (!is.list(object$tree_list)) {
-    .boostpm_stop_invalid("`object$tree_list` must be a list.")
+  if (!is.list(object$trees)) {
+    .boostpm_stop_invalid("`object$trees` must be a list.")
   }
 
-  .boostpm_validate_support(object$Omega)
+  .boostpm_validate_support(object$support)
   invisible(NULL)
 }
 
@@ -211,7 +215,7 @@
     .boostpm_stop_invalid(
       paste(
         "`eval_points` must have one column per support row;",
-        "that is, one column for each row of `Omega`."
+        "that is, one column for each row of the fitted `support`."
       )
     )
   }

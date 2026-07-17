@@ -217,7 +217,9 @@ This section records code behavior only. Agreement and conflicts with the paper 
 - Node mass is shrunk toward its geometric split mass through `c0` and the scale-dependent factor using `gamma`.
 - Early stopping is activated only when `early_stop` is non-`NULL`; this also forces a 90% training subsample.
 - The early-stopping window is initialized with large constants, delaying stopping until the window has been replaced by observed improvements.
-- The rejected stopping tree is not stored or applied, but its held-out improvement is appended to `improvement_curve`.
+- The rejected stopping tree is not stored or applied. The C++ working result
+  appends its held-out improvement to `improvement_curve`; the public fit maps
+  this and its stage and acceptance status to `heldout_diagnostics`.
 
 **unresolved**
 
@@ -497,11 +499,12 @@ The package implementation now resolves the relevant audit findings as follows:
 - reject jittered observations leaving a supplied support;
 - return log density `-Inf` outside `Omega`;
 - assign split-point equality left, following the paper;
-- retain archived `max_resol` semantics for compatibility;
+- expose archived `max_resol` semantics as `max_split_depth`;
 - remove the experimental `max_n_var` restriction from package code;
 - raise explicit errors before invalid bin access;
 - retain numeric-matrix input and strict support containment; and
-- add class `boostPM_fit` without changing the compatible list layout.
+- add class `boostPM_fit` and descriptive public result components without
+  changing the underlying numerical values.
 
 The later boundary-safe binning refinement replaces the initial error-only
 guard with equality-left `std::lower_bound()` lookup. Exact endpoints are

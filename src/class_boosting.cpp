@@ -301,6 +301,7 @@ void class_boosting::boosting(){
         mean_log_dens_train =  mean(log_dens_train);
         
         improvement_curve.push_back(mean_log_dens_train);
+        improvement_stage.push_back(step);
       }
       
       recent_improvements.subvec(0, ntrees_wait-2) = recent_improvements.subvec(1, ntrees_wait-1);
@@ -311,8 +312,14 @@ void class_boosting::boosting(){
       //Rcout << mean(recent_improvements) << "\n";
       
       if(mean(recent_improvements) < thresh_stop){
+        if(eta_subsample < 1.0){
+          improvement_accepted.push_back(false);
+        }
         break;
       }else{
+        if(eta_subsample < 1.0){
+          improvement_accepted.push_back(true);
+        }
         
         //residualize
         for(int i=0;i<n;i++){
@@ -332,6 +339,7 @@ void class_boosting::boosting(){
         int depth_max = 0;
         check_max_depth(root, depth_max);
         max_depth_store.push_back(depth_max);
+        tree_stage.push_back(step);
         
         //output the last residuals to check the performance
         //if(index_tree == num_trees-1){
@@ -805,14 +813,18 @@ List class_boosting::output(){
                                   Rcpp::Named("max_depth_store") = max_depth_store,
                                   Rcpp::Named("variable_importance") = importances,
                                   Rcpp::Named("tree_list") = tree_list,
-                                  Rcpp::Named("improvement_curve") = improvement_curve
+                                  Rcpp::Named("tree_stage") = tree_stage,
+                                  Rcpp::Named("improvement_curve") = improvement_curve,
+                                  Rcpp::Named("improvement_stage") = improvement_stage,
+                                  Rcpp::Named("improvement_accepted") = improvement_accepted
     );
   }else{
     out = Rcpp::List::create(     Rcpp::Named("residuals_boosting") = residuals_current,
                                   Rcpp::Named("tree_size_store") = tree_size_store,
                                   Rcpp::Named("max_depth_store") = max_depth_store,
                                   Rcpp::Named("variable_importance") = importances,
-                                  Rcpp::Named("tree_list") = tree_list
+                                  Rcpp::Named("tree_list") = tree_list,
+                                  Rcpp::Named("tree_stage") = tree_stage
     );
   }
   

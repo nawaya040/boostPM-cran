@@ -19,11 +19,11 @@ fixtures <- list(
     fit_seed = 314L,
     simulation_seed = 9314L,
     eval_points = matrix(c(0.15, 0.35, 0.55, 0.85), ncol = 1L),
-    ntree_max_marginal = 1L,
-    ntree_max_dependence = 0L,
-    max_resol = 1L,
-    min_obs = 2L,
-    nbins = 4L
+    max_marginal_trees = 1L,
+    max_dependence_trees = 0L,
+    max_split_depth = 1L,
+    min_node_observations = 2L,
+    n_bins = 4L
   ),
   two_dimensional = list(
     data = matrix(c(
@@ -40,11 +40,11 @@ fixtures <- list(
       0.25, 0.65,
       0.35, 0.85
     ), ncol = 2L, byrow = TRUE),
-    ntree_max_marginal = 1L,
-    ntree_max_dependence = 1L,
-    max_resol = 1L,
-    min_obs = 2L,
-    nbins = 4L
+    max_marginal_trees = 1L,
+    max_dependence_trees = 1L,
+    max_split_depth = 1L,
+    min_node_observations = 2L,
+    n_bins = 4L
   ),
   two_dimensional_grid8 = list(
     data = matrix(c(
@@ -66,11 +66,11 @@ fixtures <- list(
       0.61, 0.32,
       0.87, 0.13
     ), ncol = 2L, byrow = TRUE),
-    ntree_max_marginal = 2L,
-    ntree_max_dependence = 2L,
-    max_resol = 2L,
-    min_obs = 2L,
-    nbins = 8L
+    max_marginal_trees = 2L,
+    max_dependence_trees = 2L,
+    max_split_depth = 2L,
+    min_node_observations = 2L,
+    n_bins = 8L
   )
 )
 
@@ -79,19 +79,26 @@ fit_fixture <- function(fixture) {
     data = fixture$data,
     add_noise = FALSE,
     Omega = fixture$Omega,
-    ntree_max_marginal = fixture$ntree_max_marginal,
-    ntree_max_dependence = fixture$ntree_max_dependence,
     c0 = 0.1,
     gamma = 0,
-    max_resol = fixture$max_resol,
-    min_obs = fixture$min_obs,
-    early_stop = NULL,
-    alpha = 0.9,
-    beta = 0,
-    nbins = fixture$nbins
+    early_stop = NULL
   )
   if (implementation == "original") {
+    fit_arguments$ntree_max_marginal <- fixture$max_marginal_trees
+    fit_arguments$ntree_max_dependence <- fixture$max_dependence_trees
+    fit_arguments$max_resol <- fixture$max_split_depth
+    fit_arguments$min_obs <- fixture$min_node_observations
+    fit_arguments$nbins <- fixture$n_bins
+    fit_arguments$alpha <- 0.9
+    fit_arguments$beta <- 0
     fit_arguments$max_n_var <- 100L
+  } else {
+    fit_arguments$max_marginal_trees <- fixture$max_marginal_trees
+    fit_arguments$max_dependence_trees <- fixture$max_dependence_trees
+    fit_arguments$max_split_depth <- fixture$max_split_depth
+    fit_arguments$min_node_observations <- fixture$min_node_observations
+    fit_arguments$n_bins <- fixture$n_bins
+    fit_arguments$prior_split_prob <- 0.9
   }
 
   set.seed(fixture$fit_seed)
@@ -112,12 +119,41 @@ fit_fixture <- function(fixture) {
   }
   simulation_rng <- .Random.seed
 
+  normalized_density <- if (implementation == "package") {
+    list(
+      log_density = density$log_density,
+      mean_log_density_path = density$mean_log_density_path
+    )
+  } else {
+    list(
+      log_density = density$log_densities,
+      mean_log_density_path = density$mean_log_dens_path
+    )
+  }
+
+  normalized_fit <- if (implementation == "package") {
+    list(
+      residual_coordinates = fit$residual_coordinates,
+      tree_node_counts = fit$tree_diagnostics$node_count,
+      tree_depths = fit$tree_diagnostics$max_depth,
+      variable_importance = unname(as.numeric(fit$variable_importance)),
+      trees = fit$trees,
+      support = unname(fit$support)
+    )
+  } else {
+    list(
+      residual_coordinates = fit$residuals_boosting,
+      tree_node_counts = fit$tree_size_store,
+      tree_depths = fit$max_depth_store,
+      variable_importance = unname(as.numeric(fit$variable_importance)),
+      trees = fit$tree_list,
+      support = fit$Omega
+    )
+  }
+
   list(
-    fit = fit[c(
-      "residuals_boosting", "tree_size_store", "max_depth_store",
-      "variable_importance", "tree_list", "Omega"
-    )],
-    density = density,
+    fit = normalized_fit,
+    density = normalized_density,
     simulation = simulation,
     fit_rng = fit_rng,
     simulation_rng = simulation_rng

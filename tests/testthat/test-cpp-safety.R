@@ -1,6 +1,6 @@
 testthat::test_that("post-processing rejects malformed support", {
   fit <- structure(
-    list(tree_list = list(), Omega = matrix(1, nrow = 1L, ncol = 1L)),
+    list(trees = list(), support = matrix(1, nrow = 1L, ncol = 1L)),
     class = c("boostPM_fit", "list")
   )
   testthat::expect_error(
@@ -8,7 +8,7 @@ testthat::test_that("post-processing rejects malformed support", {
     "exactly two columns"
   )
 
-  fit$Omega <- matrix(c(1, 1), nrow = 1L)
+  fit$support <- matrix(c(1, 1), nrow = 1L)
   testthat::expect_error(
     boostPM:::simulate.boostPM_fit(fit, nsim = 1L),
     "positive width"
@@ -17,7 +17,7 @@ testthat::test_that("post-processing rejects malformed support", {
 
 testthat::test_that("simulation rejects negative sizes", {
   fit <- structure(
-    list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L)),
+    list(trees = list(), support = matrix(c(0, 1), nrow = 1L)),
     class = c("boostPM_fit", "list")
   )
   testthat::expect_error(
@@ -52,7 +52,7 @@ testthat::test_that("fitting handles node boundaries and round-off drift", {
 
 testthat::test_that("density evaluation rejects incompatible points", {
   fit <- structure(
-    list(tree_list = list(), Omega = cbind(c(0, 0), c(1, 1))),
+    list(trees = list(), support = cbind(c(0, 0), c(1, 1))),
     class = c("boostPM_fit", "list")
   )
   testthat::expect_error(
@@ -67,19 +67,19 @@ testthat::test_that("density evaluation rejects incompatible points", {
 
 testthat::test_that("post-processing rejects malformed serialized trees", {
   malformed <- structure(list(
-    tree_list = list(list(
+    trees = list(list(
       d = c(0L, -1L, -1L),
       l = c(0.5, -1),
       theta = c(0.5, -1, -1)
     )),
-    Omega = matrix(c(0, 1), nrow = 1L)
+    support = matrix(c(0, 1), nrow = 1L)
   ), class = c("boostPM_fit", "list"))
   testthat::expect_error(
     stats::simulate(malformed, nsim = 1L),
     "equal non-zero lengths"
   )
 
-  malformed$tree_list[[1]] <- list(
+  malformed$trees[[1]] <- list(
     d = c(1L, -1L, -1L),
     l = c(0.5, -1, -1),
     theta = c(0.5, -1, -1)

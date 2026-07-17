@@ -145,30 +145,28 @@ par(old_par)
 
 ## Fit the ensembles
 
-The fitting controls follow the accuracy-oriented configuration used in the
-paper and its public experiment code. The marginal stage is capped at 100
-trees per dimension, and the dependence stage is capped at 5,000 trees. A
-learning rate of 0.1 is combined with adaptive stopping based on the most
-recent 50 validation improvements.
-
-The caps are upper limits. Adaptive stopping will usually select substantially
-fewer trees.
+The tree-number, learning-rate, and stopping controls follow the
+accuracy-oriented experimental configuration. The marginal stage is capped at
+100 trees per dimension, and the dependence stage is capped at 5,000 trees. A
+learning rate of 0.1 is combined with adaptive stopping based on the most recent
+50 validation improvements. The split prior of 0.9 follows the archived
+implementation and public experiment code.
 
 ```{r fit-beta}
 set.seed(31001)
 fit_beta <- fit_boostpm(
   beta_data,
   Omega = support,
-  add_noise = FALSE,
-  ntree_max_marginal = 100,
-  ntree_max_dependence = 5000,
-  nbins = 100,
+  max_marginal_trees = 100,
+  max_dependence_trees = 5000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
   c0 = 0.1,
   gamma = 0.5,
   early_stop = c(0, 50),
-  max_resol = 15,
-  min_obs = 10,
-  prior_split_prob = 0.9
+  prior_split_prob = 0.9,
+  add_noise = FALSE
 )
 ```
 
@@ -177,21 +175,18 @@ set.seed(32001)
 fit_sinusoidal <- fit_boostpm(
   sinusoidal_data,
   Omega = support,
-  add_noise = FALSE,
-  ntree_max_marginal = 100,
-  ntree_max_dependence = 5000,
-  nbins = 100,
+  max_marginal_trees = 100,
+  max_dependence_trees = 5000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
   c0 = 0.1,
   gamma = 0.5,
   early_stop = c(0, 50),
-  max_resol = 15,
-  min_obs = 10,
-  prior_split_prob = 0.9
+  prior_split_prob = 0.9,
+  add_noise = FALSE
 )
 ```
-
-Calling `set.seed()` controls the stochastic tree-fitting decisions. The same
-seed and runtime provide the intended reproducibility level for a fit.
 
 ## Inspect fitted objects
 
@@ -203,8 +198,8 @@ print(fit_beta)
 summary(fit_sinusoidal)
 ```
 
-Variable-importance, tree-size, and maximum-depth plots are available through
-`plot()`.
+Variable-importance, number-of-nodes, and maximum-depth plots are available
+through `plot()`.
 
 ```{r variable-importance, fig.width=6.5, fig.height=4.5}
 plot(fit_sinusoidal, type = "variable_importance")
@@ -213,8 +208,7 @@ plot(fit_sinusoidal, type = "variable_importance")
 ## Evaluate the fitted densities
 
 `predict()` returns log density by default. Here both fitted densities are
-evaluated on an 80 by 80 midpoint grid. Midpoints avoid placing evaluations
-exactly on the support boundary.
+evaluated on an 80 by 80 midpoint grid.
 
 ```{r density-evaluation}
 grid_size <- 80L
@@ -299,9 +293,8 @@ draw_density(
 par(old_par)
 ```
 
-The estimates recover both the beta-product density and the nonlinear
-sinusoidal ridge. Local step-like contours reflect the tree-based
-representation.
+The fitted densities visually capture the main features of both the
+beta-product density and the nonlinear sinusoidal ridge.
 
 Points outside the support have log density `-Inf` and density zero.
 
@@ -342,9 +335,9 @@ draw_points(
 par(old_par)
 ```
 
-The generated observations preserve the beta marginal shapes and the nonlinear
-sinusoidal structure visible in the training samples. Marginal empirical
-distribution functions provide a second comparison.
+The generated observations reproduce the main visible features of the beta
+marginal shapes and nonlinear sinusoidal structure in the training samples.
+Marginal empirical distribution functions provide a second comparison.
 
 ```{r marginal-comparison, fig.width=8, fig.height=7.2}
 data_pairs <- list(
@@ -362,10 +355,11 @@ for (data_pair in data_pairs) {
       xlim = support[j, ],
       lwd = 2,
       col = "black",
-      xlab = colnames(data_pair[[2]])[j],
+      xlab = "",
       ylab = "Empirical cumulative probability",
       main = paste(data_pair[[1]], paste0("x", j))
     )
+    mtext(colnames(data_pair[[2]])[j], side = 1, line = 2.5)
     lines(
       stats::ecdf(data_pair[[3]][, j]),
       verticals = TRUE,
@@ -384,19 +378,13 @@ for (data_pair in data_pairs) {
 par(old_par)
 ```
 
-These plots are descriptive checks rather than formal goodness-of-fit tests.
-Applied analyses should use held-out predictive log density or another
-problem-specific validation criterion when selecting tuning parameters.
-
 ## Practical notes
 
 - Use a finite numeric matrix. Constant columns are not supported.
 - `Omega` must have two columns and positive width in each dimension.
-- `nbins` controls the uniform candidate split grid and must be at least two.
+- `n_bins` controls the uniform candidate split grid and must be at least two.
 - `c0` is strictly between zero and one; `gamma` is non-negative.
 - More trees and deeper weak learners increase flexibility and computation.
-- The fitting controls used here prioritize illustration accuracy. Applied
-  tuning should use held-out predictive performance.
 
 ## References
 

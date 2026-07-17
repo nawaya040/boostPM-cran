@@ -6,10 +6,9 @@
 \alias{boostPM}
 \title{boostPM: Unsupervised Tree Boosting for Learning Probability Distributions}
 \description{
-Fits tree-ensemble probability distributions, evaluates fitted log
-densities, and generates samples. The package implementation follows the
-method of Awaya and Ma (2024), while retaining numerical provenance from the
-archived research implementation.
+Implements the unsupervised tree boosting method of Awaya and Ma (2024) for
+fitting tree-ensemble probability distributions, evaluating fitted
+densities, and generating samples.
 }
 \references{
 Awaya, N. and Ma, L. (2024). Unsupervised Tree Boosting for Learning
@@ -17,12 +16,8 @@ Probability Distributions. \emph{Journal of Machine Learning Research}, 25,
 1--52.
 }
 \seealso{
-Useful links:
-\itemize{
-  \item \url{https://github.com/nawaya040/boostPM-cran}
-  \item Report bugs at \url{https://github.com/nawaya040/boostPM-cran/issues}
-}
-
+\code{\link[=fit_boostpm]{fit_boostpm()}}, \code{\link[=predict.boostPM_fit]{predict.boostPM_fit()}},
+\code{\link[=simulate.boostPM_fit]{simulate.boostPM_fit()}}, and \code{\link[=plot.boostPM_fit]{plot.boostPM_fit()}}.
 }
 \author{
 \strong{Maintainer}: Naoki Awaya \email{nawaya@waseda.jp}

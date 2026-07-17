@@ -18,15 +18,15 @@ fit_small_archive_case <- function(seed = 20240714L) {
       small_two_dimensional_data(),
       add_noise = FALSE,
       Omega = cbind(c(0, 0), c(1, 1)),
-      ntree_max_marginal = 1,
-      ntree_max_dependence = 1,
+      max_marginal_trees = 1,
+      max_dependence_trees = 1,
       c0 = 0.1,
       gamma = 0,
-      max_resol = 1,
-      min_obs = 2,
+      max_split_depth = 1,
+      min_node_observations = 2,
       early_stop = NULL,
       prior_split_prob = 0.9,
-      nbins = 4
+      n_bins = 4
     )
   ))
   fit
@@ -37,11 +37,11 @@ make_one_split_fit <- function(
     location = 0.5,
     support = matrix(c(0, 1), nrow = 1L)) {
   structure(list(
-    tree_list = list(list(
+    trees = list(list(
       d = c(0L, -1L, -1L),
       l = c(location, -1, -1),
       theta = c(theta, -1, -1)
     )),
-    Omega = support
+    support = support
   ), class = c("boostPM_fit", "list"))
 }

@@ -61,8 +61,8 @@ The archived `boosting_functions.R` was divided into `R/preprocessing.R`,
 `R/controls.R`, `R/boosting.R`, and `R/postprocessing.R`. Defaults, low-level
 argument order, returned content, console output, and the start point of
 elapsed-time measurement were retained. The current primary API is
-`fit_boostpm()`, `predict()`, and `simulate()`; the archived public names remain
-available as deprecated compatibility wrappers.
+`fit_boostpm()`, `predict()`, and `simulate()`; the archived public names were
+removed before the first CRAN release.
 
 A fixed-seed direct comparison found identical preprocessing results, C++ call
 arguments, returned content excluding elapsed time, and final R random-number
@@ -119,12 +119,14 @@ tolerances. The new checks affect malformed post-processing inputs only.
 - Evaluation points outside `Omega` receive log density `-Inf`.
 - Split-point equality is assigned left during fitting, evaluation,
   residualization, and inverse simulation, following the paper.
-- `max_resol` retains the archived deepest-splittable-node behavior.
+- `max_split_depth` retains the archived `max_resol`
+  deepest-splittable-node behavior.
 - The experimental `max_n_var` feature is removed from the package code.
 - Invalid C++ bin indices raise an explicit error before vector access.
 - The public data input remains restricted to numeric matrices.
-- Fits receive S3 class `boostPM_fit` without changing their list contents;
-  compatible unclassed fits remain accepted by post-processing.
+- Fits receive S3 class `boostPM_fit`. Before the first CRAN release, archived
+  working-component names were replaced at the R boundary by descriptive
+  public names; post-processing requires the new fitted-object structure.
 - Training observations must remain strictly inside supplied support bounds.
 
 These are intentional package-versus-archive differences. Interior fixed-seed

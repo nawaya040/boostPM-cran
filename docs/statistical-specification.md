@@ -482,7 +482,8 @@ If `early_stop = c(threshold, wait)`:
 - the remaining observations evaluate the new tree;
 - a stage stops when the mean of the most recent `wait` held-out tree log densities is below `threshold`;
 - the rejected tree is neither stored nor applied to the residuals;
-- its evaluation is retained in `improvement_curve`.
+- its evaluation is retained internally in `improvement_curve` and exposed by
+  the package with its stage and acceptance status in `heldout_diagnostics`.
 
 The window is initialized with large constants, so it cannot trigger normally until those values have been replaced.
 
@@ -623,22 +624,21 @@ convention remains covered by the separate characterization suite.
 
 ## 18. Public R parameters and archived defaults
 
-| Argument | Archived default | Implemented meaning |
+| Package argument | Archived name/default | Implemented meaning |
 |---|---:|---|
 | `add_noise` | `TRUE` | Jitter tied values before fitting |
 | `Omega` | `NULL` | Automatic rectangular support when absent |
-| `ntree_max_marginal` | `100` | Maximum marginal trees per dimension |
-| `ntree_max_dependence` | `1000` | Maximum dependence trees |
+| `max_marginal_trees` | `ntree_max_marginal = 100` | Maximum marginal trees per dimension |
+| `max_dependence_trees` | `ntree_max_dependence = 1000` | Maximum dependence trees |
+| `n_bins` | `nbins = 8` | Produces 7 candidate split fractions |
+| `max_split_depth` | `max_resol = 15` | Code permits splits through this depth |
+| `min_node_observations` | `min_obs = 5` | Stop when node count is below this value |
 | `c0` | `0.1` | Global learning rate |
 | `gamma` | `0.1` | Scale-specific shrinkage exponent |
-| `max_resol` | `15` | Code permits splits through this depth |
-| `min_obs` | `5` | Stop when node count is below this value |
 | `early_stop` | `NULL` | No adaptive stopping when absent |
-| `alpha` | `0.9` | Depth-zero split probability |
-| `beta` | `0.0` | Depth decay exponent in split probability |
-| `precision` | `1.0` | Beta-prior precision used for tree selection |
-| `nbins` | `8` | Produces 7 candidate split fractions |
-| `max_n_var` | `100` | Maximum distinct variables per tree; experimental |
+| `prior_split_prob` | `alpha = 0.9`, `beta = 0.0` | Constant prior split probability |
+| not exposed | `precision = 1.0` | Beta-prior precision fixed internally |
+| not exposed | `max_n_var = 100` | Archived experimental restriction removed |
 
 These are archived software defaults. They are not all the settings reported in the final paper.
 
@@ -646,9 +646,9 @@ The package retains these numerical defaults except that `max_n_var` has been
 removed and the archived `alpha = 0.9, beta = 0` pair is represented by
 `prior_split_prob = 0.9`. It validates `0 < c0 < 1`, `gamma >= 0`,
 and `0 <= prior_split_prob <= 1`. The archived `precision = 1` setting is fixed
-internally and is no longer a fitting control. `max_resol` retains the archived
-interpretation as the deepest splittable node, so leaves may occur at
-`max_resol + 1`.
+internally and is no longer a fitting control. `max_split_depth` retains the
+archived `max_resol` interpretation as the deepest splittable node, so leaves
+may occur at `max_split_depth + 1`.
 
 ## 19. Paper and experiment settings
 
@@ -670,14 +670,14 @@ interpretation as the deepest splittable node, so leaves may occur at
 The density-estimation script uses or documents:
 
 - `set.seed(1)`; seeds 1 through 30 for the Section 3.1 repetitions
-- `ntree_max_marginal = 1000`
-- `ntree_max_dependence = 5000`
+- archived `ntree_max_marginal = 1000` (`max_marginal_trees` in the package)
+- archived `ntree_max_dependence = 5000` (`max_dependence_trees` in the package)
 - `c0 = 0.1`
 - `gamma = 0.5`
-- `max_resol = 15`, or 50 for Section 3.2
-- `min_obs = 10`
+- archived `max_resol = 15`, or 50 for Section 3.2 (`max_split_depth`)
+- archived `min_obs = 10` (`min_node_observations`)
 - `early_stop = c(0, 50)`
-- `nbins = 100`, giving 99 code-level candidates
+- archived `nbins = 100`, giving 99 code-level candidates (`n_bins`)
 - `max_n_var = d`
 - archived `alpha = 0.9` and `beta = 0`, represented in the package as
   `prior_split_prob = 0.9`
@@ -732,17 +732,24 @@ non-empty path entry is likewise (-\infty).
 
 **confirmed from the original code**
 
-The archived fit is an unclassed R list. The package preserves its contents and
-adds S3 class `boostPM_fit`. Components include:
+The archived fit is an unclassed R list whose component names reflect internal
+working variables. The package maps that working result at the R boundary to
+an S3 object of class `boostPM_fit` with the following public components:
 
-- `residuals_boosting`: final residual matrix with shape (d\times n)
-- `tree_size_store`: number of nodes per accepted tree
-- `max_depth_store`: maximum node depth per accepted tree
-- `variable_importance`: length-(d) importance vector
-- `tree_list`: serialized accepted trees
-- `improvement_curve`: present only when adaptive stopping is active
-- `Omega`: original-scale support
-- `time`: elapsed fitting time
+- `trees`: serialized accepted trees
+- `residual_coordinates`: final residual matrix with shape (d\times n)
+- `tree_diagnostics`: accepted-tree data frame containing tree index, fitting
+  stage, marginal variable when applicable, node count, and maximum depth
+- `variable_importance`: length-(d) numeric importance vector, named from the
+  data columns when available
+- `heldout_diagnostics`: held-out-candidate data frame containing stage,
+  marginal variable, mean log-density improvement, and acceptance status, or
+  `NULL` when adaptive stopping is disabled
+- `support`: named original-scale lower and upper limits corresponding to
+  (\Omega)
+- `elapsed_time`: elapsed fitting time
+- `call`: matched fitting call
+- `control`: validated controls actually used by fitting
 
 Each serialized tree stores preorder vectors:
 
@@ -750,7 +757,9 @@ Each serialized tree stores preorder vectors:
 - `l`: geometric split fraction, or `-1` for a leaf
 - `theta`: shrunk left-child mass (q_A), or `-1` for a leaf
 
-The tree list and its order are part of the numerical model and must be preserved when introducing a future S3 class.
+The serialized trees and their order are part of the numerical model and are
+preserved by the public-name mapping. The mapping does not change numerical
+values or random draws.
 
 ## 23. Random-number generation and reproducibility
 
@@ -818,7 +827,8 @@ Current characterization status:
 8. [x] Automatic support normalization and Jacobian correction.
 9. [x] Tie jitter with interior and endpoint ties.
 10. [x] Exact split-point equality behavior.
-11. [x] `max_resol` maximum resulting depth.
+11. [x] `max_split_depth` deepest-splittable-node behavior inherited from
+    archived `max_resol`.
 12. [x] Adaptive stopping and rejected-tree behavior.
 13. [x] Density evaluation outside `Omega`.
 14. [x] Non-finite input, empty/small samples, constant columns, invalid controls,

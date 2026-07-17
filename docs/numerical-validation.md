@@ -256,7 +256,8 @@ collision while comparing the same fixed-seed computation.
 
 Three valid, strictly interior fixtures were compared: a univariate fixture, a
 small two-dimensional fixture, and a two-dimensional `nbins = 8` fixture. For
-each fixture, the fitted object excluding timing and class metadata, density
+each fixture, fitted numerical content after normalizing the archived and
+package component names and excluding timing and class metadata, density
 evaluation, simulation, and final R RNG state matched with `identical()`.
 This establishes exact reproducibility for those fixtures. It does not apply to
 the intentional differences in boundary assignment, validation errors, or the
@@ -331,3 +332,47 @@ syntax checks passed. A source tarball including the rebuilt vignette completed
 The only note was the environment-level `unable to verify current time`; all
 package compilation, code, documentation, examples, tests, vignette rebuilding,
 and PDF and HTML manual checks passed.
+
+## 18. Descriptive fitted-object structure
+
+On 2026-07-17, the first set of provisional fitted-object component names was replaced at
+the R boundary by descriptive public names. The C++ fitting routine and its
+working output were not changed. The R wrapper now maps the working values to
+`trees`, `residual_coordinates`, per-tree structural diagnostics,
+`variable_importance`, held-out diagnostics, `support`, and
+`elapsed_time`, and adds the matched `call` and validated `control` settings.
+The old public names are not retained as aliases.
+
+The routine suite passed 148 tests with no failures, warnings, or skips. This
+included the existing fixed-seed tree, residual-coordinate, density-path, and
+simulation fixtures. The separate original-versus-package runner normalized
+the archived and package component names and then compared three fixtures.
+Fitted numerical values, density evaluations, simulations, and final R RNG
+states matched exactly with `identical()`. Thus this change affects the public
+R representation but not the numerical or inferential result for the tested
+fixtures.
+
+The predictive-validation runner also reproduced the previously recorded
+scores, Monte Carlo integrals, and simulated-mean checks for all three
+scenarios. A source build and Windows 11 `R CMD check --as-cran` with R 4.5.2
+completed with no errors or warnings. The three notes were the expected new
+submission notice, the environment-level inability to verify the current time,
+and skipped HTML math rendering because the optional `V8` package was absent.
+
+## 19. Final public API and diagnostic metadata
+
+On 2026-07-17, the remaining implementation-oriented fitting controls were
+renamed to `max_marginal_trees`, `max_dependence_trees`, `n_bins`,
+`max_split_depth`, and `min_node_observations`. The order passed to the C++
+fitting routine is unchanged. Per-tree node counts and depths are now combined
+in `tree_diagnostics`; held-out scores, stage labels, and acceptance status are
+combined in `heldout_diagnostics`. These added labels are observational
+metadata and do not alter tree construction, stopping decisions, random draws,
+or numerical outputs.
+
+The revised routine suite passed 165 tests with no failures, warnings, or
+skips. The isolated original-versus-package runner again matched all fitted
+numerical values, density paths, simulations, and final RNG states exactly for
+the univariate and two two-dimensional fixtures. The predictive-validation
+runner passed finite-density, Monte Carlo normalization, support, and simulated
+mean checks for the beta, Gaussian-copula, and uniform scenarios.

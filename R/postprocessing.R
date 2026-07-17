@@ -10,7 +10,9 @@
 #' @param ... Unused. Additional arguments are an error.
 #'
 #' @return A numeric matrix with `nsim` rows and one column per fitted
-#'   variable.
+#'   variable, in the same order as the training data. Training variable names
+#'   are preserved as column names when available. Every draw lies within the
+#'   fitted rectangular support.
 #'
 #' @details
 #' With `seed = NULL`, randomness is controlled by calling [set.seed()] before
@@ -18,18 +20,34 @@
 #' its subsequent state.
 #'
 #' @examples
-#' set.seed(10)
-#' x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-#' x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+#' set.seed(42)
+#' n <- 400L
+#' x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+#' x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+#' set.seed(123)
 #' fit <- fit_boostpm(
 #'   x,
 #'   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-#'   add_noise = FALSE,
-#'   ntree_max_marginal = 1,
-#'   ntree_max_dependence = 1,
-#'   max_resol = 1
+#'   max_marginal_trees = 100,
+#'   max_dependence_trees = 1000,
+#'   n_bins = 100,
+#'   max_split_depth = 15,
+#'   min_node_observations = 10,
+#'   c0 = 0.1,
+#'   gamma = 0.5,
+#'   add_noise = FALSE
 #' )
-#' simulate(fit, nsim = 3, seed = 1)
+#' generated <- simulate(fit, nsim = 500, seed = 321)
+#'
+#' old_par <- graphics::par(mfrow = c(1, 2))
+#' graphics::plot(x, xlab = "x1", ylab = "x2", main = "Training data")
+#' graphics::plot(
+#'   generated,
+#'   xlab = "x1",
+#'   ylab = "x2",
+#'   main = "Generated data"
+#' )
+#' graphics::par(old_par)
 #'
 #' @export
 #' @md
@@ -47,11 +65,17 @@ simulate.boostPM_fit <- function(object, nsim = 1L, seed = NULL, ...) {
     set.seed(as.integer(seed))
   }
 
-  simulation(
-    object$tree_list,
+  simulated <- simulation(
+    object$trees,
     nsim,
-    object$Omega
+    object$support
   )
+  variable_names <- names(object$variable_importance)
+  if (!is.null(variable_names)) {
+    colnames(simulated) <- variable_names
+  }
+
+  simulated
 }
 
 #' Evaluate a Fitted boostPM Density
@@ -65,33 +89,55 @@ simulate.boostPM_fit <- function(object, nsim = 1L, seed = NULL, ...) {
 #' @param type Character string selecting the return value: `"log_density"`
 #'   returns log densities, `"density"` returns densities, and `"details"`
 #'   returns a diagnostic list containing log densities and the cumulative mean
-#'   log-density path.
+#'   log-density path across the fitted trees.
 #' @param ... Unused. Additional arguments are an error.
 #'
 #' @return For `type = "log_density"` or `type = "density"`, a numeric vector
-#'   with one entry per row of `newdata`. For `type = "details"`, a list with
-#'   components `log_densities` and `mean_log_dens_path`.
+#'   with one entry per row of `newdata`, in the original row order. For
+#'   `type = "details"`, a list containing:
+#' \describe{
+#'   \item{log_density}{The same vector returned by `type = "log_density"`.}
+#'   \item{mean_log_density_path}{A numeric vector with one entry per fitted
+#'   tree. Entry `k` is the mean log density over all rows of `newdata` after
+#'   the first `k` trees have been applied.}
+#' }
 #'
 #' @details
 #' Points outside the fitted rectangular support receive log density `-Inf` and
 #' density zero. At a split point, evaluation follows the left-child convention
-#' in the method specification.
+#' in the method specification. Because `mean_log_density_path` averages over
+#' every row of `newdata`, the entire path is `-Inf` when any row lies outside
+#' the support.
 #'
 #' @examples
-#' set.seed(10)
-#' x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-#' x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+#' set.seed(42)
+#' n <- 400L
+#' x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+#' x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+#' set.seed(123)
 #' fit <- fit_boostpm(
 #'   x,
 #'   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-#'   add_noise = FALSE,
-#'   ntree_max_marginal = 1,
-#'   ntree_max_dependence = 1,
-#'   max_resol = 1
+#'   max_marginal_trees = 100,
+#'   max_dependence_trees = 1000,
+#'   n_bins = 100,
+#'   max_split_depth = 15,
+#'   min_node_observations = 10,
+#'   c0 = 0.1,
+#'   gamma = 0.5,
+#'   add_noise = FALSE
 #' )
-#' evaluation_points <- matrix(c(0.25, 0.25, 0.50, 0.50),
-#'                             ncol = 2, byrow = TRUE)
-#' predict(fit, evaluation_points, type = "density")
+#'
+#' grid <- seq(0.01, 0.99, length.out = 50L)
+#' evaluation_grid <- as.matrix(expand.grid(x1 = grid, x2 = grid))
+#' fitted_density <- matrix(
+#'   predict(fit, evaluation_grid, type = "density"),
+#'   nrow = length(grid)
+#' )
+#' graphics::image(grid, grid, fitted_density, xlab = "x1", ylab = "x2")
+#' graphics::contour(
+#'   grid, grid, fitted_density, add = TRUE, drawlabels = FALSE
+#' )
 #'
 #' @export
 #' @md
@@ -106,40 +152,44 @@ predict.boostPM_fit <- function(object,
 
   type <- match.arg(type)
   .boostpm_validate_fit_object(object)
-  .boostpm_validate_eval_points(newdata, nrow(object$Omega))
+  .boostpm_validate_eval_points(newdata, nrow(object$support))
 
   outside <- vapply(
     seq_len(nrow(newdata)),
     function(i) {
       any(
-        newdata[i, ] < object$Omega[, 1L] |
-          newdata[i, ] > object$Omega[, 2L]
+        newdata[i, ] < object$support[, 1L] |
+          newdata[i, ] > object$support[, 2L]
       )
     },
     logical(1)
   )
 
   if (!any(outside)) {
-    details <- evaluate_log_density(
-      object$tree_list,
+    raw_details <- evaluate_log_density(
+      object$trees,
       newdata,
-      object$Omega
+      object$support
+    )
+    details <- list(
+      log_density = raw_details$log_densities,
+      mean_log_density_path = raw_details$mean_log_dens_path
     )
   } else {
-    log_densities <- rep(-Inf, nrow(newdata))
+    log_density <- rep(-Inf, nrow(newdata))
     inside <- !outside
     if (any(inside)) {
       inside_densities <- evaluate_log_density(
-        object$tree_list,
+        object$trees,
         newdata[inside, , drop = FALSE],
-        object$Omega
+        object$support
       )
-      log_densities[inside] <- inside_densities$log_densities
+      log_density[inside] <- inside_densities$log_densities
     }
 
     details <- list(
-      log_densities = log_densities,
-      mean_log_dens_path = rep(-Inf, length(object$tree_list))
+      log_density = log_density,
+      mean_log_density_path = rep(-Inf, length(object$trees))
     )
   }
 
@@ -147,8 +197,8 @@ predict.boostPM_fit <- function(object,
     return(details)
   }
   if (identical(type, "log_density")) {
-    return(details$log_densities)
+    return(details$log_density)
   }
 
-  exp(details$log_densities)
+  exp(details$log_density)
 }

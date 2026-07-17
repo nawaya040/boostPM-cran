@@ -96,6 +96,7 @@ public:
   
   std::vector<int> tree_size_store;
   std::vector<int> max_depth_store;
+  std::vector<int> tree_stage;
   
   arma::mat residuals_last_boosting;
 
@@ -109,6 +110,8 @@ public:
   arma::uvec indices_not_used;
   
   std::vector<double> improvement_curve;
+  std::vector<int> improvement_stage;
+  std::vector<bool> improvement_accepted;
   
   //variables to store the information of generated trees
   std::vector<int> d_store;

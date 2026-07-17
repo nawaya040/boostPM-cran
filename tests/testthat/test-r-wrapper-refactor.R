@@ -66,7 +66,14 @@ testthat::test_that("public fit API preserves low-level argument order", {
   testthat::local_mocked_bindings(
     do_boosting = function(...) {
       recorded$arguments <- list(...)
-      list(marker = "mock fit")
+      list(
+        residuals_boosting = t(recorded$arguments[[1L]]),
+        tree_size_store = 1L,
+        max_depth_store = 1L,
+        variable_importance = c(0.25, 0.75),
+        tree_list = list("tree"),
+        tree_stage = 0L
+      )
     },
     .package = "boostPM"
   )
@@ -89,9 +96,21 @@ testthat::test_that("public fit API preserves low-level argument order", {
     0.9, 0.1, 15, 100, 1000, 0.1, 5, 8,
     1, 1, 100, FALSE
   ))
-  testthat::expect_identical(fit$marker, "mock fit")
+  testthat::expect_identical(fit$trees, list("tree"))
+  testthat::expect_equal(
+    fit$residual_coordinates,
+    t(expected_scaled),
+    tolerance = 1e-15
+  )
   testthat::expect_s3_class(fit, "boostPM_fit")
-  testthat::expect_s3_class(fit$time, "difftime")
+  testthat::expect_s3_class(fit$elapsed_time, "difftime")
+  testthat::expect_match(
+    paste(deparse(fit$call), collapse = " "),
+    "fit_boostpm",
+    fixed = TRUE
+  )
+  testthat::expect_identical(fit$control$prior_split_prob, 0.9)
+  testthat::expect_identical(fit$control$max_marginal_trees, 100L)
   testthat::expect_length(output, 0L)
 })
 
@@ -110,8 +129,9 @@ testthat::test_that("S3 post-processing methods preserve argument order", {
   )
 
   fit <- list(
-    tree_list = list("tree"),
-    Omega = matrix(c(0, 1), nrow = 1L)
+    trees = list("tree"),
+    variable_importance = c(measurement = 1),
+    support = matrix(c(0, 1), nrow = 1L)
   )
   class(fit) <- c("boostPM_fit", "list")
   points <- matrix(c(0.2, 0.8), ncol = 1L)
@@ -120,17 +140,23 @@ testthat::test_that("S3 post-processing methods preserve argument order", {
   density <- stats::predict(fit, points, type = "details")
 
   testthat::expect_identical(recorded$simulation, list(
-    fit$tree_list, 2L, fit$Omega
+    fit$trees, 2L, fit$support
   ))
   testthat::expect_identical(recorded$density, list(
-    fit$tree_list, points, fit$Omega
+    fit$trees, points, fit$support
   ))
-  testthat::expect_identical(simulated, matrix(0.25, nrow = 2L, ncol = 1L))
+  testthat::expect_identical(
+    simulated,
+    structure(
+      matrix(0.25, nrow = 2L, ncol = 1L),
+      dimnames = list(NULL, "measurement")
+    )
+  )
   testthat::expect_identical(names(density), c(
-    "log_densities", "mean_log_dens_path"
+    "log_density", "mean_log_density_path"
   ))
-  testthat::expect_identical(density$log_densities, 1:2)
-  testthat::expect_identical(density$mean_log_dens_path, 3:4)
+  testthat::expect_identical(density$log_density, 1:2)
+  testthat::expect_identical(density$mean_log_density_path, 3:4)
 })
 
 testthat::test_that("preprocessing rejects constant columns", {

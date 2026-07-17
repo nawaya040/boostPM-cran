@@ -16,10 +16,10 @@ require an explicit methodological decision.
 - `add_noise`: one non-missing logical value.
 - supplied `Omega`: finite numeric matrix with one row per data variable,
   exactly two columns, and strictly positive row widths.
-- tree counts and `max_resol`: non-negative integer-valued numbers within the
-  Rcpp integer range.
-- `min_obs`: positive integer-valued number within that range.
-- `nbins`: integer-valued number of at least two, ensuring at least one split
+- `max_marginal_trees`, `max_dependence_trees`, and `max_split_depth`:
+  non-negative integer-valued numbers within the Rcpp integer range.
+- `min_node_observations`: positive integer-valued number within that range.
+- `n_bins`: integer-valued number of at least two, ensuring at least one split
   candidate.
 - `0 < c0 < 1`, `gamma >= 0`, and `0 <= prior_split_prob <= 1`.
 - `early_stop`: `NULL` or a finite numeric vector of length two, with an
@@ -29,7 +29,7 @@ require an explicit methodological decision.
 
 ### Simulation and density evaluation
 
-- fitted object: a list containing a list-valued `tree_list` and valid `Omega`.
+- fitted object: a list containing list-valued `trees` and a valid `support`.
 - simulation size: non-negative integer-valued scalar within the Rcpp integer
   range; zero remains supported.
 - evaluation points: finite numeric matrix with one column per support
@@ -94,7 +94,7 @@ Options:
 
 1. Require `gamma >= 0`, matching the paper.
 2. Allow negative values only when the effective rate stays valid through
-   `max_resol`.
+   `max_split_depth`.
 3. Retain scalar-finiteness checking as an undocumented extension.
 
 **approved decision:** option 1. The package requires `gamma >= 0`.
@@ -173,19 +173,22 @@ Options 1 and 2 can alter trees for tied, rounded, or boundary-valued data.
 **approved decision:** option 1. Fitting, evaluation, and inverse simulation
 assign equality left, following the paper.
 
-### 9. Meaning of `max_resol`
+### 9. Meaning of `max_split_depth`
 
-Current code permits a node at `max_resol` to split, creating leaves at
-`max_resol + 1`.
+The archived code permits a node at `max_resol` to split. The package exposes
+the same behavior as `max_split_depth`, creating leaves at
+`max_split_depth + 1`.
 
 Options:
 
-1. Treat it as deepest resulting leaf and stop at `depth >= max_resol`.
+1. Treat it as deepest resulting leaf and stop at
+   `depth >= max_split_depth`.
 2. Treat it as deepest splittable node and retain current behavior.
-3. Rename the control to express current semantics, with a compatibility alias.
+3. Rename the control to express current semantics without retaining an alias.
 
-**approved decision:** option 2. `max_resol` retains the archived meaning of the
-deepest splittable node; resulting leaves may occur at `max_resol + 1`.
+**approved decision:** retain option 2 behavior and implement option 3 naming.
+`max_split_depth` means the deepest splittable node; resulting leaves may occur
+at `max_split_depth + 1`. The archived name is not part of the public API.
 
 ### 10. `max_n_var` status and upper range
 

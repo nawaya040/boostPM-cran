@@ -3,8 +3,8 @@ minimal_fit_arguments <- function() {
     data = matrix(c(0.25, 0.75), ncol = 1L),
     add_noise = FALSE,
     Omega = matrix(c(0, 1), nrow = 1L),
-    ntree_max_marginal = 0,
-    ntree_max_dependence = 0
+    max_marginal_trees = 0,
+    max_dependence_trees = 0
   )
 }
 
@@ -65,11 +65,11 @@ testthat::test_that("fit_boostpm validates structural controls", {
 
   invalid_controls <- list(
     add_noise = NA,
-    ntree_max_marginal = -1,
-    ntree_max_dependence = 0.5,
-    max_resol = -1,
-    min_obs = 0,
-    nbins = 1,
+    max_marginal_trees = -1,
+    max_dependence_trees = 0.5,
+    max_split_depth = -1,
+    min_node_observations = 0,
+    n_bins = 1,
     c0 = Inf,
     gamma = NA_real_,
     prior_split_prob = numeric()
@@ -153,7 +153,10 @@ testthat::test_that("retired fitting controls are removed", {
     "max_n_var" %in% names(formals(boostPM::fit_boostpm))
   )
   testthat::expect_false(
-    any(c("alpha", "beta", "precision") %in%
+    any(c(
+      "alpha", "beta", "precision", "ntree_max_marginal",
+      "ntree_max_dependence", "nbins", "max_resol", "min_obs"
+    ) %in%
         names(formals(boostPM::fit_boostpm)))
   )
   testthat::expect_identical(
@@ -203,7 +206,7 @@ testthat::test_that("fit_boostpm validates early stopping controls", {
 
   one_row <- arguments
   one_row$data <- matrix(0.5, ncol = 1L)
-  one_row$ntree_max_marginal <- 1
+  one_row$max_marginal_trees <- 1
   one_row$early_stop <- c(0, 2)
   testthat::expect_error(
     do.call(boostPM::fit_boostpm, one_row),
@@ -213,11 +216,11 @@ testthat::test_that("fit_boostpm validates early stopping controls", {
 
 testthat::test_that("post-processing validates fitted objects", {
   incomplete <- structure(
-    list(tree_list = list()),
+    list(trees = list()),
     class = c("boostPM_fit", "list")
   )
   malformed <- structure(
-    list(tree_list = 1, Omega = matrix(c(0, 1), nrow = 1L)),
+    list(trees = 1, support = matrix(c(0, 1), nrow = 1L)),
     class = c("boostPM_fit", "list")
   )
 
@@ -231,13 +234,13 @@ testthat::test_that("post-processing validates fitted objects", {
   )
   testthat::expect_error(
     stats::simulate(malformed, nsim = 1),
-    "tree_list"
+    "trees"
   )
 })
 
 testthat::test_that("simulation validates nsim", {
   fit <- structure(
-    list(tree_list = list(), Omega = matrix(c(0, 1), nrow = 1L)),
+    list(trees = list(), support = matrix(c(0, 1), nrow = 1L)),
     class = c("boostPM_fit", "list")
   )
 
@@ -258,7 +261,7 @@ testthat::test_that("simulation validates nsim", {
 
 testthat::test_that("density evaluation validates its point matrix", {
   fit <- structure(
-    list(tree_list = list(), Omega = cbind(c(0, 0), c(1, 1))),
+    list(trees = list(), support = cbind(c(0, 0), c(1, 1))),
     class = c("boostPM_fit", "list")
   )
 

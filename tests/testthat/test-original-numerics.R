@@ -3,8 +3,8 @@ testthat::test_that("small fixed-seed fit reproduces the archived numerical fixt
   repeated <- fit_small_archive_case()
 
   fields <- c(
-    "residuals_boosting", "tree_size_store", "max_depth_store",
-    "variable_importance", "tree_list", "Omega"
+    "residual_coordinates", "tree_diagnostics",
+    "variable_importance", "trees", "support"
   )
   testthat::expect_identical(fit[fields], repeated[fields])
 
@@ -33,12 +33,18 @@ testthat::test_that("small fixed-seed fit reproduces the archived numerical fixt
     )
   )
 
-  testthat::expect_equal(fit$residuals_boosting, expected_residuals, tolerance = 1e-13)
-  testthat::expect_identical(fit$tree_size_store, c(5L, 5L, 5L))
-  testthat::expect_identical(fit$max_depth_store, c(2L, 2L, 2L))
+  testthat::expect_equal(fit$residual_coordinates, expected_residuals, tolerance = 1e-13)
+  testthat::expect_identical(fit$tree_diagnostics$node_count, c(5L, 5L, 5L))
+  testthat::expect_identical(fit$tree_diagnostics$max_depth, c(2L, 2L, 2L))
   testthat::expect_equal(as.numeric(fit$variable_importance), expected_importance, tolerance = 1e-13)
-  testthat::expect_identical(fit$tree_list, expected_trees)
-  testthat::expect_identical(fit$Omega, matrix(c(0, 0, 1, 1), nrow = 2L))
+  testthat::expect_identical(fit$trees, expected_trees)
+  testthat::expect_identical(
+    fit$support,
+    structure(
+      matrix(c(0, 0, 1, 1), nrow = 2L),
+      dimnames = list(NULL, c("lower", "upper"))
+    )
+  )
 })
 
 testthat::test_that("fixed archived fit reproduces density path", {
@@ -50,12 +56,12 @@ testthat::test_that("fixed archived fit reproduces density path", {
   )
 
   testthat::expect_equal(
-    as.numeric(result$log_densities),
+    as.numeric(result$log_density),
     rep(0.226469471096288, 4L),
     tolerance = 1e-13
   )
   testthat::expect_equal(
-    as.numeric(result$mean_log_dens_path),
+    as.numeric(result$mean_log_density_path),
     c(0.0655796456459817, 0.160889825450307, 0.226469471096288),
     tolerance = 1e-13
   )
@@ -86,15 +92,15 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
       data,
       add_noise = FALSE,
       Omega = matrix(c(0, 1), nrow = 1L),
-      ntree_max_marginal = 1,
-      ntree_max_dependence = 0,
+      max_marginal_trees = 1,
+      max_dependence_trees = 0,
       c0 = 0.1,
       gamma = 0,
-      max_resol = 1,
-      min_obs = 2,
+      max_split_depth = 1,
+      min_node_observations = 2,
       early_stop = NULL,
       prior_split_prob = 1,
-      nbins = 4
+      n_bins = 4
     )
   ))
 
@@ -112,19 +118,19 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
     theta = c(0.5, 0.741666666666667, -1, -1, 0.258333333333333, -1, -1)
   )
 
-  testthat::expect_equal(fit$residuals_boosting, expected_residuals, tolerance = 1e-13)
-  testthat::expect_identical(fit$tree_size_store, 7L)
-  testthat::expect_identical(fit$max_depth_store, 2L)
+  testthat::expect_equal(fit$residual_coordinates, expected_residuals, tolerance = 1e-13)
+  testthat::expect_identical(fit$tree_diagnostics$node_count, 7L)
+  testthat::expect_identical(fit$tree_diagnostics$max_depth, 2L)
   testthat::expect_equal(
     as.numeric(fit$variable_importance),
     0.00348107387558016,
     tolerance = 1e-14
   )
-  testthat::expect_equal(fit$tree_list[[1]], expected_tree, tolerance = 1e-14)
+  testthat::expect_equal(fit$trees[[1]], expected_tree, tolerance = 1e-14)
 
   density <- stats::predict(fit, data, type = "details")
   testthat::expect_equal(
-    as.numeric(density$log_densities),
+    as.numeric(density$log_density),
     c(
       -0.0111733005981253,
       -0.0111733005981253,

@@ -18,7 +18,9 @@ number generator immediately before simulation.}
 }
 \value{
 A numeric matrix with \code{nsim} rows and one column per fitted
-variable.
+variable, in the same order as the training data. Training variable names
+are preserved as column names when available. Every draw lies within the
+fitted rectangular support.
 }
 \description{
 Draws samples from the probability distribution represented by a fitted
@@ -30,17 +32,33 @@ With \code{seed = NULL}, randomness is controlled by calling \code{\link[=set.se
 its subsequent state.
 }
 \examples{
-set.seed(10)
-x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+set.seed(42)
+n <- 400L
+x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+set.seed(123)
 fit <- fit_boostpm(
   x,
   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-  add_noise = FALSE,
-  ntree_max_marginal = 1,
-  ntree_max_dependence = 1,
-  max_resol = 1
+  max_marginal_trees = 100,
+  max_dependence_trees = 1000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
+  c0 = 0.1,
+  gamma = 0.5,
+  add_noise = FALSE
 )
-simulate(fit, nsim = 3, seed = 1)
+generated <- simulate(fit, nsim = 500, seed = 321)
+
+old_par <- graphics::par(mfrow = c(1, 2))
+graphics::plot(x, xlab = "x1", ylab = "x2", main = "Training data")
+graphics::plot(
+  generated,
+  xlab = "x1",
+  ylab = "x2",
+  main = "Generated data"
+)
+graphics::par(old_par)
 
 }

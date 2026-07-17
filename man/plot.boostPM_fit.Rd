@@ -4,35 +4,49 @@
 \alias{plot.boostPM_fit}
 \title{Plot Diagnostics for a Fitted boostPM Distribution}
 \usage{
-\method{plot}{boostPM_fit}(x, type = c("variable_importance", "tree_size", "max_depth"), ...)
+\method{plot}{boostPM_fit}(
+  x,
+  type = c("variable_importance", "tree_node_counts", "tree_depths"),
+  ...
+)
 }
 \arguments{
 \item{x}{A fitted object returned by \code{\link[=fit_boostpm]{fit_boostpm()}}.}
 
-\item{type}{Character string selecting "variable_importance", "tree_size",
-or "max_depth".}
+\item{type}{Character string selecting "variable_importance",
+"tree_node_counts", or "tree_depths".}
 
-\item{...}{Additional arguments passed to \code{\link[graphics:barplot]{graphics::barplot()}}.}
+\item{...}{Additional arguments passed to \code{\link[graphics:barplot]{graphics::barplot()}}. User values
+for \code{names.arg} and \code{ylab} override the method defaults. \code{height} cannot be
+supplied because it is determined by the selected diagnostic.}
 }
 \value{
 The bar midpoints returned by \code{\link[graphics:barplot]{graphics::barplot()}}, invisibly.
 }
 \description{
-Displays a bar plot of variable importance, tree sizes, or maximum tree
-depths.
+Displays a bar plot of variable importance, the number of nodes per tree,
+or maximum tree depths.
 }
 \examples{
-set.seed(10)
-x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
-x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+set.seed(42)
+n <- 400L
+x1 <- stats::rbeta(n, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(n, 2 + 6 * x1, 4))
+set.seed(123)
 fit <- fit_boostpm(
   x,
   Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
-  add_noise = FALSE,
-  ntree_max_marginal = 1,
-  ntree_max_dependence = 1,
-  max_resol = 1
+  max_marginal_trees = 100,
+  max_dependence_trees = 1000,
+  n_bins = 100,
+  max_split_depth = 15,
+  min_node_observations = 10,
+  c0 = 0.1,
+  gamma = 0.5,
+  add_noise = FALSE
 )
-plot(fit)
+plot(fit, type = "variable_importance")
+plot(fit, type = "tree_node_counts")
+plot(fit, type = "tree_depths")
 
 }

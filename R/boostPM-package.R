@@ -1,9 +1,11 @@
 #' boostPM: Unsupervised Tree Boosting for Learning Probability Distributions
 #'
-#' Fits tree-ensemble probability distributions, evaluates fitted log
-#' densities, and generates samples. The package implementation follows the
-#' method of Awaya and Ma (2024), while retaining numerical provenance from the
-#' archived research implementation.
+#' Implements the unsupervised tree boosting method of Awaya and Ma (2024) for
+#' fitting tree-ensemble probability distributions, evaluating fitted
+#' densities, and generating samples.
+#'
+#' @seealso [fit_boostpm()], [predict.boostPM_fit()],
+#'   [simulate.boostPM_fit()], and [plot.boostPM_fit()].
 #'
 #' @references
 #' Awaya, N. and Ma, L. (2024). Unsupervised Tree Boosting for Learning
