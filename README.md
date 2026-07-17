@@ -36,15 +36,15 @@ support <- cbind(c(0, 0), c(1, 1))
 set.seed(2)
 fit <- fit_boostpm(
   data,
-  add_noise = FALSE,
   Omega = support,
+  add_noise = FALSE,
   ntree_max_marginal = 2,
   ntree_max_dependence = 2,
+  nbins = 4,
   c0 = 0.1,
   gamma = 0.5,
   max_resol = 1,
-  min_obs = 2,
-  nbins = 4
+  min_obs = 2
 )
 
 log_density <- predict(fit, data, type = "log_density")

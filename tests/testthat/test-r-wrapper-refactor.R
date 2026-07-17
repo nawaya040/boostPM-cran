@@ -85,8 +85,8 @@ testthat::test_that("public fit API preserves low-level argument order", {
     nrow = 3L
   )
   testthat::expect_equal(recorded$arguments[[1]], expected_scaled, tolerance = 1e-15)
-  testthat::expect_identical(recorded$arguments[2:15], list(
-    1, 0.9, 0, 0.1, 15, 100, 1000, 0.1, 5, 8,
+  testthat::expect_identical(recorded$arguments[2:13], list(
+    0.9, 0.1, 15, 100, 1000, 0.1, 5, 8,
     1, 1, 100, FALSE
   ))
   testthat::expect_identical(fit$marker, "mock fit")

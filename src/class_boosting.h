@@ -20,8 +20,6 @@ struct Node
   double location; // the value of "L"
   double partition_point; //The partition point in the selected dimension
   
-  double precision;
-  
   unsigned int counts;
   
   double theta_old;
@@ -41,9 +39,7 @@ public:
   //Constructor
   class_boosting(
                       arma::mat X,
-                      double precision,
-                      double alpha,
-                      double beta,
+                      double prior_split_prob,
                       double gamma,
                       int max_resol,
                       int num_each_dim,
@@ -59,9 +55,7 @@ public:
   
   //Input information
   arma::mat X; //n x d 
-  double precision;
-  double alpha;
-  double beta;
+  double prior_split_prob;
   double gamma;
   double rho; //what is rho?
   int max_resol;
@@ -152,7 +146,6 @@ public:
   bool split_node(Node* node);
   
   //utilities for boosting
-  double get_precision(Node* node);
   arma::ivec make_left_count_vector(Node* node, int dim);
   double get_split_prob(Node* node);
   void check_max_depth( Node* node, int& depth_max);
@@ -175,7 +168,6 @@ public:
   void clear_node(Node* root) noexcept;
   
   //miscellaneous functions
-  double compute_precision(int depth);
   double compute_splitting_prob(int depth);
 
 };

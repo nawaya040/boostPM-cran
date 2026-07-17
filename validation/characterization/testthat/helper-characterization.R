@@ -46,7 +46,6 @@ fit_small_archive_case <- function(seed = 20240714L) {
       early_stop = NULL,
       alpha = 0.9,
       beta = 0,
-      precision = 1,
       nbins = 4,
       max_n_var = 2
     )
@@ -67,4 +66,3 @@ make_one_split_fit <- function(
     Omega = support
   )
 }
-

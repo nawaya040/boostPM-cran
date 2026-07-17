@@ -18,11 +18,13 @@ using namespace std;
 
 #define MIN_WIDTH 1e-10
 
+namespace {
+constexpr double BETA_PRIOR_PRECISION = 1.0;
+}
+
 class_boosting::class_boosting(
                      mat X,
-                     double precision,
-                     double alpha,
-                     double beta,
+                     double prior_split_prob,
                      double gamma,
                      int max_resol,
                      int num_each_dim,
@@ -36,9 +38,7 @@ class_boosting::class_boosting(
                      bool show_progress
 ):
   X(X),
-  precision(precision),
-  alpha(alpha),
-  beta(beta),
+  prior_split_prob(prior_split_prob),
   gamma(gamma),
   max_resol(max_resol),
   num_each_dim(num_each_dim),
@@ -119,7 +119,6 @@ Node* class_boosting::get_root_node(){
   new_node->left = nullptr;
   new_node->right = nullptr;
   new_node->counts = 0;
-  new_node->precision = compute_precision(new_node->depth);
   
   
   for(int i=0; i<size_subsample; i++){
@@ -167,7 +166,6 @@ Node* class_boosting::get_new_node(Node* parent, bool this_is_left, int dim_sele
   new_node->left = nullptr;
   new_node->right = nullptr;
   new_node->counts = 0;
-  new_node->precision = compute_precision(new_node->depth);
   
   return new_node;
 }
@@ -423,8 +421,8 @@ bool class_boosting::split_node(Node* node){
     is_split = false;
     
   }else{
-    //Compute the precision
-    double prec = get_precision(node) ;
+    // Appendix C fixes the beta shapes at L and 1 - L.
+    constexpr double prec = BETA_PRIOR_PRECISION;
     
     double alpha_l, alpha_r;
     double alpha_l_post, alpha_r_post;
@@ -564,11 +562,6 @@ bool class_boosting::split_node(Node* node){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-double class_boosting::get_precision(Node* node){
-  //In the current version, the precision of the beta prior is fixed to the input value
-  return precision;
-}
-
 //output: vector of observations that are "left" to each possible partition point
 ivec class_boosting::make_left_count_vector(Node* node, int dim){
   //Make a vector of observations in the current dimension included in the current node
@@ -656,9 +649,8 @@ ivec class_boosting::make_left_count_vector(Node* node, int dim){
   return cumsum(count_vec);
 }
 
-double class_boosting::get_split_prob(Node* node){
-  //Notice that the depth starts from 0
-  return alpha * pow((double) node->depth+1, - beta);
+double class_boosting::get_split_prob(Node* /* node */){
+  return prior_split_prob;
 }
 
 
@@ -786,8 +778,8 @@ double class_boosting::evaluate_log_prior(Node* node){
   }else{
     double log_prob_divide = log(compute_splitting_prob(node->depth));
     double log_dens_theta = R::dbeta( node->theta, 
-                                  node->precision * node->location,
-                                  node->precision * (1.0 - node->location),
+                                  BETA_PRIOR_PRECISION * node->location,
+                                  BETA_PRIOR_PRECISION * (1.0 - node->location),
                                   true);
     
     log_dens_theta = 0;
@@ -875,10 +867,6 @@ void class_boosting::clear_node(Node* root) noexcept{
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-double class_boosting::compute_precision( int depth){
-  return  precision;
-}
-
-double class_boosting::compute_splitting_prob(int depth){
-  return  alpha * pow((double) depth + 1.0, - beta);
+double class_boosting::compute_splitting_prob(int /* depth */){
+  return prior_split_prob;
 }

@@ -72,9 +72,7 @@ testthat::test_that("fit_boostpm validates structural controls", {
     nbins = 1,
     c0 = Inf,
     gamma = NA_real_,
-    alpha = numeric(),
-    beta = c(0, 1),
-    precision = "one"
+    prior_split_prob = numeric()
   )
 
   for (name in names(invalid_controls)) {
@@ -103,9 +101,7 @@ testthat::test_that("fit_boostpm validates statistical parameter domains", {
   invalid_parameters <- list(
     c0 = c(0, 1, -0.1, 1.1),
     gamma = -0.1,
-    alpha = c(-0.1, 1.1),
-    beta = -0.1,
-    precision = c(0, -1)
+    prior_split_prob = c(-0.1, 1.1)
   )
 
   for (name in names(invalid_parameters)) {
@@ -121,9 +117,9 @@ testthat::test_that("fit_boostpm validates statistical parameter domains", {
     }
   }
 
-  for (alpha in c(0, 1)) {
+  for (prior_split_prob in c(0, 1)) {
     call_arguments <- arguments
-    call_arguments$alpha <- alpha
+    call_arguments$prior_split_prob <- prior_split_prob
     testthat::expect_no_error(do.call(boostPM::fit_boostpm, call_arguments))
   }
 })
@@ -152,9 +148,38 @@ testthat::test_that("jittered observations must remain inside supplied support",
   )
 })
 
-testthat::test_that("experimental max_n_var argument is removed", {
+testthat::test_that("retired fitting controls are removed", {
   testthat::expect_false(
     "max_n_var" %in% names(formals(boostPM::fit_boostpm))
+  )
+  testthat::expect_false(
+    any(c("alpha", "beta", "precision") %in%
+        names(formals(boostPM::fit_boostpm)))
+  )
+  testthat::expect_identical(
+    formals(boostPM::fit_boostpm)$prior_split_prob,
+    0.9
+  )
+
+  arguments <- minimal_fit_arguments()
+  arguments$alpha <- 0.9
+  testthat::expect_error(
+    do.call(boostPM::fit_boostpm, arguments),
+    "unused argument"
+  )
+
+  arguments <- minimal_fit_arguments()
+  arguments$beta <- 0
+  testthat::expect_error(
+    do.call(boostPM::fit_boostpm, arguments),
+    "unused argument"
+  )
+
+  arguments <- minimal_fit_arguments()
+  arguments$precision <- 1
+  testthat::expect_error(
+    do.call(boostPM::fit_boostpm, arguments),
+    "unused argument"
   )
 })
 

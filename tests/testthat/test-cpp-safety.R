@@ -30,7 +30,7 @@ testthat::test_that("fitting handles node boundaries and round-off drift", {
   fit_raw_value <- function(value) {
     result <- boostPM:::do_boosting(
       matrix(value, nrow = 1L, ncol = 1L),
-      1, 1, 0, 0, 0, 1, 0, 0.1, 1, 2, 1, 1, 100, FALSE
+      1, 0, 0, 1, 0, 0.1, 1, 2, 1, 1, 100, FALSE
     )
     result
   }

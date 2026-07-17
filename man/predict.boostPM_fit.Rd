@@ -34,15 +34,19 @@ density zero. At a split point, evaluation follows the left-child convention
 in the method specification.
 }
 \examples{
-fit <- list(
-  tree_list = list(list(
-    d = c(0L, -1L, -1L),
-    l = c(0.5, -1, -1),
-    theta = c(0.25, -1, -1)
-  )),
-  Omega = matrix(c(0, 1), nrow = 1)
+set.seed(10)
+x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
+fit <- fit_boostpm(
+  x,
+  Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
+  add_noise = FALSE,
+  ntree_max_marginal = 1,
+  ntree_max_dependence = 1,
+  max_resol = 1
 )
-class(fit) <- c("boostPM_fit", "list")
-predict(fit, matrix(c(0.25, 0.75), ncol = 1), type = "log_density")
+evaluation_points <- matrix(c(0.25, 0.25, 0.50, 0.50),
+                            ncol = 2, byrow = TRUE)
+predict(fit, evaluation_points, type = "density")
 
 }

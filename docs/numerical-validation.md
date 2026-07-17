@@ -287,3 +287,47 @@ equality across platforms. After excluding `.github` from the source tarball,
 the final local Windows `R CMD check --as-cran --no-manual` completed with 0
 errors, 0 warnings, and 2 notes: the development version/new-submission notice
 and unavailable local pandoc.
+
+## 16. Constant split-prior API
+
+On 2026-07-17, the provisional `alpha` and `beta` fitting controls were
+replaced by `prior_split_prob`. The C++ depth-decay term was removed, so the
+new control is applied as a constant split prior at every tree depth. Its
+default of 0.9 maps to the archived experiment setting `alpha = 0.9, beta = 0`.
+
+An isolated copy of the package immediately before the API change was compared
+with the new implementation on a fixed-seed two-dimensional fit. With the old
+setting `alpha = 0.9, beta = 0` and the new setting
+`prior_split_prob = 0.9`, `identical()` returned true for the fitted object
+after removing elapsed time, density values on an 81-point grid, and 40
+simulated observations. This establishes exact reproducibility for that
+fixture. Settings with nonzero historical `beta` intentionally have no mapping
+in the new public API.
+
+The routine `testthat` suite passed after the change. A source tarball including
+the rebuilt vignette was then checked on Windows 11 with R 4.5.2 using
+`R CMD check --as-cran`; the final status was `OK` with no errors, warnings, or
+notes. The check included compilation, examples, tests, vignette rebuilding,
+and PDF and HTML manual generation.
+
+## 17. Fixed auxiliary beta-prior precision
+
+On 2026-07-17, the provisional public `precision` fitting control was removed
+and the auxiliary beta-prior precision was fixed internally at one. Appendix
+C.2.1--C.2.2 specifies the shapes as `L` and `1 - L`, and the public experiment
+code also uses `precision = 1`.
+
+The package immediately before this change was compared with the fixed-value
+implementation using the same seeded two-dimensional fixture as Section 16.
+`identical()` returned true for the fitted object after removing elapsed time,
+density values on an 81-point grid, and 40 simulated observations. This
+establishes exact reproducibility for the removed control at its former default
+and public-experiment value. Non-unit historical `precision` values
+intentionally have no mapping in the package API.
+
+The routine `testthat` suite and the auxiliary validation/benchmark script
+syntax checks passed. A source tarball including the rebuilt vignette completed
+`R CMD check --as-cran` on Windows 11 with R 4.5.2 with no errors or warnings.
+The only note was the environment-level `unable to verify current time`; all
+package compilation, code, documentation, examples, tests, vignette rebuilding,
+and PDF and HTML manual checks passed.

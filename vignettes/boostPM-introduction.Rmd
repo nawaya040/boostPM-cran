@@ -158,19 +158,17 @@ fewer trees.
 set.seed(31001)
 fit_beta <- fit_boostpm(
   beta_data,
-  add_noise = FALSE,
   Omega = support,
+  add_noise = FALSE,
   ntree_max_marginal = 100,
   ntree_max_dependence = 5000,
+  nbins = 100,
   c0 = 0.1,
   gamma = 0.5,
+  early_stop = c(0, 50),
   max_resol = 15,
   min_obs = 10,
-  early_stop = c(0, 50),
-  nbins = 100,
-  alpha = 0.9,
-  beta = 0,
-  precision = 1
+  prior_split_prob = 0.9
 )
 ```
 
@@ -178,19 +176,17 @@ fit_beta <- fit_boostpm(
 set.seed(32001)
 fit_sinusoidal <- fit_boostpm(
   sinusoidal_data,
-  add_noise = FALSE,
   Omega = support,
+  add_noise = FALSE,
   ntree_max_marginal = 100,
   ntree_max_dependence = 5000,
+  nbins = 100,
   c0 = 0.1,
   gamma = 0.5,
+  early_stop = c(0, 50),
   max_resol = 15,
   min_obs = 10,
-  early_stop = c(0, 50),
-  nbins = 100,
-  alpha = 0.9,
-  beta = 0,
-  precision = 1
+  prior_split_prob = 0.9
 )
 ```
 

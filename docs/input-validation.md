@@ -21,8 +21,7 @@ require an explicit methodological decision.
 - `min_obs`: positive integer-valued number within that range.
 - `nbins`: integer-valued number of at least two, ensuring at least one split
   candidate.
-- `0 < c0 < 1`, `gamma >= 0`, `0 <= alpha <= 1`, `beta >= 0`, and
-  `precision > 0`.
+- `0 < c0 < 1`, `gamma >= 0`, and `0 <= prior_split_prob <= 1`.
 - `early_stop`: `NULL` or a finite numeric vector of length two, with an
   integer waiting window of at least two.
 - adaptive stopping: at least two observations when any tree may be fitted,
@@ -100,35 +99,29 @@ Options:
 
 **approved decision:** option 1. The package requires `gamma >= 0`.
 
-### 4. Split-prior parameters `alpha` and `beta`
+### 4. Split-prior parameter `prior_split_prob`
 
-The code uses `alpha * (depth + 1)^(-beta)` as a split probability.
+The paper uses a constant stopping probability, while the archived code adds an
+unreported depth-decay exponent. Before the first CRAN release, the user-facing
+API was simplified to a constant prior split probability.
 
-Options:
+**approved decision:** the package requires
+`0 <= prior_split_prob <= 1`, removes the archived `beta` control, and uses
+`prior_split_prob = 0.9` by default. The value 0.9 matches the public experiment
+code. The value 0.5 maps to the constant split prior implied by the 0.5 stopping
+probability in Appendix C.
+Deterministic endpoint choices remain accepted for characterization and
+boundary testing.
 
-1. Require `0 <= alpha <= 1` and `beta >= 0`. Simple and sufficient at every
-   depth.
-2. Validate only depths reachable under `max_resol`, permitting some negative
-   `beta` values.
-3. Require `0 < alpha < 1` and `beta >= 0`, excluding deterministic choices.
-4. Retain scalar-finiteness checking only.
+### 5. Auxiliary beta prior
 
-**approved decision:** option 1. The package requires `0 <= alpha <= 1` and
-`beta >= 0`. The separate paper-versus-code conflict over the reported value of
-`alpha` remains unresolved.
+**confirmed from Appendix C.2.1--C.2.2:** the paper specifies beta shapes
+`L` and `1 - L`, whose sum is one. The archived implementation exposed a
+general precision multiplier, but the public experiments always used one.
 
-### 5. Auxiliary beta-prior `precision`
-
-The beta shapes are `precision * L` and `precision * (1 - L)`, implying
-positive precision.
-
-Options:
-
-1. Require `precision > 0`.
-2. Add a positive numerical lower bound, which would need justification.
-3. Retain scalar-finiteness checking and allow downstream non-finite results.
-
-**approved decision:** option 1. The package requires `precision > 0`.
+**approved decision, 2026-07-17:** remove `precision` from the package API and
+fix the internal multiplier at one. This makes the package interface match the
+paper while preserving the archived experiment setting.
 
 ### 6. Jitter relative to user-supplied `Omega`
 

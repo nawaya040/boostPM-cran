@@ -56,7 +56,6 @@ fit_arguments <- function(data) {
     early_stop = NULL,
     alpha = 0.9,
     beta = 0,
-    precision = 1,
     nbins = 8L
   )
 }

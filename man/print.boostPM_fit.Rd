@@ -18,12 +18,16 @@ The input object, invisibly.
 Prints a compact description of a boostPM_fit object.
 }
 \examples{
+set.seed(10)
+x1 <- stats::rbeta(60, shape1 = 2, shape2 = 5)
+x <- cbind(x1 = x1, x2 = stats::rbeta(60, 2 + 4 * x1, 3))
 fit <- fit_boostpm(
-  matrix(c(0.2, 0.4, 0.6, 0.8), ncol = 1),
+  x,
+  Omega = cbind(lower = c(0, 0), upper = c(1, 1)),
   add_noise = FALSE,
-  Omega = matrix(c(0, 1), nrow = 1),
-  ntree_max_marginal = 0,
-  ntree_max_dependence = 0
+  ntree_max_marginal = 1,
+  ntree_max_dependence = 1,
+  max_resol = 1
 )
 print(fit)
 

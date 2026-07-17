@@ -9,9 +9,7 @@ using namespace std;
 
 // [[Rcpp::export]]
 Rcpp::List do_boosting(arma::mat X,
-         double precision,
-         double alpha,
-         double beta,
+         double prior_split_prob,
          double gamma,
          int max_resol,
          int num_each_dim,
@@ -28,9 +26,7 @@ Rcpp::List do_boosting(arma::mat X,
 
   //Initialize the class object
   class_boosting my_boosting(X,
-                              precision,
-                              alpha,
-                              beta,
+                              prior_split_prob,
                               gamma,
                               max_resol,
                               num_each_dim,

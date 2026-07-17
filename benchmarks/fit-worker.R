@@ -40,7 +40,6 @@ fit_once <- function(case, data, seed) {
     early_stop = NULL,
     alpha = 0.9,
     beta = 0,
-    precision = 1,
     nbins = case$nbins
   )
   if ("max_n_var" %in% names(formals(boostPM::fit_boostpm))) {

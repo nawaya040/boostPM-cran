@@ -11,9 +11,7 @@ testthat::test_that("max_resol retains deepest-splittable-node semantics", {
       gamma = 0,
       max_resol = 0,
       min_obs = 1,
-      alpha = 1,
-      beta = 0,
-      precision = 1,
+      prior_split_prob = 1,
       nbins = 2
     )
   ))
@@ -35,9 +33,7 @@ testthat::test_that("split equality is assigned left during fit and evaluation",
       gamma = 0,
       max_resol = 0,
       min_obs = 1,
-      alpha = 1,
-      beta = 0,
-      precision = 1,
+      prior_split_prob = 1,
       nbins = 2
     )
   ))
@@ -91,9 +87,7 @@ testthat::test_that("a rejected early-stopping tree is not stored or applied", {
       max_resol = 1,
       min_obs = 1,
       early_stop = c(200, 2),
-      alpha = 0.9,
-      beta = 0,
-      precision = 1,
+      prior_split_prob = 0.9,
       nbins = 4
     )
   ))

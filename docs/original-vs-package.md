@@ -105,11 +105,16 @@ tolerances. The new checks affect malformed post-processing inputs only.
 
 ## Approved input and boundary decisions
 
-**explicit user instruction, 2026-07-14**
+**explicit user instructions, 2026-07-14 and 2026-07-17**
 
 - Constant data columns are rejected.
-- The package validates `0 < c0 < 1`, `gamma >= 0`, `0 <= alpha <= 1`,
-  `beta >= 0`, and `precision > 0`.
+- The package validates `0 < c0 < 1`, `gamma >= 0`,
+  and `0 <= prior_split_prob <= 1`.
+- The archived `alpha = 0.9, beta = 0` split prior is exposed as
+  `prior_split_prob = 0.9`; the unreported depth-decay extension is not part of
+  the package API.
+- The archived `precision` control is removed and fixed internally at one,
+  matching both Appendix C and the public experiment setting.
 - Jittered values leaving a supplied `Omega` raise an error.
 - Evaluation points outside `Omega` receive log density `-Inf`.
 - Split-point equality is assigned left during fitting, evaluation,

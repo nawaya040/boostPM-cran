@@ -13,7 +13,6 @@ testthat::test_that("max_resol zero currently creates depth-one leaves", {
       min_obs = 1,
       alpha = 1,
       beta = 0,
-      precision = 1,
       nbins = 2,
       max_n_var = 1
     )
@@ -38,7 +37,6 @@ testthat::test_that("split equality is trained right but evaluated left", {
       min_obs = 1,
       alpha = 1,
       beta = 0,
-      precision = 1,
       nbins = 2,
       max_n_var = 1
     )
@@ -92,7 +90,6 @@ testthat::test_that("a rejected early-stopping tree is not stored or applied", {
       early_stop = c(200, 2),
       alpha = 0.9,
       beta = 0,
-      precision = 1,
       nbins = 4,
       max_n_var = 2
     )

@@ -14,6 +14,25 @@
 * Added optional stage-level fitting messages through
   `progress = "stage"`; fitting remains silent by default.
 
+* Replaced the provisional `alpha` and `beta` split-prior controls with
+  `prior_split_prob`. The default remains 0.9, matching the archived software
+  and public experiment code, while the depth-decay extension is no longer
+  exposed.
+
+* Removed the provisional `precision` fitting control and fixed the auxiliary
+  beta-prior precision at 1, matching Appendix C and the public experiments.
+
+* Reordered `fit_boostpm()` arguments so that support, tree-count, split-grid,
+  and learning-rate controls appear before lower-level regularization controls.
+  Expanded the manual with the paper's scale-specific learning-rate formula,
+  the exact held-out early-stopping rule, support and tie handling, split-prior
+  interpretation, and reproducibility guidance.
+
+* Replaced zero-tree and hand-constructed fitted-object examples throughout
+  the manual with small reproducible two-dimensional fits that demonstrate
+  fitting, diagnostics, density evaluation, and simulation while remaining
+  suitable for CRAN example checks.
+
 * Expanded the introductory vignette with an independent beta reference case,
   a nonlinear sinusoidal scenario, paper-oriented accuracy controls,
   fitted-density comparisons, and generated-sample visualizations.
@@ -28,7 +47,7 @@
 * Added R-side validation for public fitting, simulation, and density-evaluation
   inputs.
 * Enforced approved parameter domains: `0 < c0 < 1`, `gamma >= 0`,
-  `0 <= alpha <= 1`, `beta >= 0`, and `precision > 0`.
+  and `0 <= prior_split_prob <= 1`.
 * Rejected constant data columns and jittered observations that leave a supplied
   support.
 * Assigned split-point equality to the left child throughout fitting, density

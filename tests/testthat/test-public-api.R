@@ -1,3 +1,15 @@
+testthat::test_that("fit arguments follow the documented public order", {
+  testthat::expect_identical(
+    names(formals(boostPM::fit_boostpm)),
+    c(
+      "data", "Omega", "add_noise",
+      "ntree_max_marginal", "ntree_max_dependence", "nbins",
+      "c0", "gamma", "early_stop",
+      "max_resol", "min_obs", "prior_split_prob", "progress"
+    )
+  )
+})
+
 testthat::test_that("new public API returns documented prediction types", {
   fit <- list(
     tree_list = list(list(
@@ -46,9 +58,7 @@ testthat::test_that("progress messages are optional and numerically inert", {
     gamma = 0,
     max_resol = 1,
     min_obs = 2,
-    alpha = 0.9,
-    beta = 0,
-    precision = 1,
+    prior_split_prob = 0.9,
     nbins = 4
   )
 

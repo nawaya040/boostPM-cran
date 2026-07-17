@@ -211,6 +211,9 @@ This section records code behavior only. Agreement and conflicts with the paper 
 - Split versus stop and the selected split rule are sampled stochastically.
 - The split probability is implemented as `alpha * (depth + 1)^(-beta)`.
 - The R comment describes `alpha * (1 + depth)^beta` without the minus sign. With the default `beta = 0`, the discrepancy is hidden.
+- Package resolution: before the first CRAN release, the package removed the
+  depth-decay extension and renamed the constant split prior to
+  `prior_split_prob`; the archived implementation remains unchanged.
 - Node mass is shrunk toward its geometric split mass through `c0` and the scale-dependent factor using `gamma`.
 - Early stopping is activated only when `early_stop` is non-`NULL`; this also forces a 90% training subsample.
 - The early-stopping window is initialized with large constants, delaying stopping until the window has been replaced by observed improvements.
@@ -482,13 +485,15 @@ Current status: **not ready**.
 
 ## 20. Resolution update: input and boundary policy
 
-**explicit user instruction, 2026-07-14**
+**explicit user instructions, 2026-07-14 and 2026-07-17**
 
 The package implementation now resolves the relevant audit findings as follows:
 
 - reject constant columns;
-- enforce `0 < c0 < 1`, `gamma >= 0`, `0 <= alpha <= 1`, `beta >= 0`, and
-  `precision > 0`;
+- enforce `0 < c0 < 1`, `gamma >= 0`, and
+  `0 <= prior_split_prob <= 1`;
+- remove the package-level `precision` control and fix it at one as specified
+  in Appendix C and used in the public experiments;
 - reject jittered observations leaving a supplied support;
 - return log density `-Inf` outside `Omega`;
 - assign split-point equality left, following the paper;

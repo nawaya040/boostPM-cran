@@ -116,9 +116,7 @@
                                            max_resol,
                                            min_obs,
                                            early_stop,
-                                           alpha,
-                                           beta,
-                                           precision,
+                                           prior_split_prob,
                                            nbins) {
   .boostpm_validate_flag(add_noise, "add_noise")
 
@@ -136,7 +134,7 @@
   .boostpm_validate_count(min_obs, "min_obs", minimum = 1L)
   .boostpm_validate_count(nbins, "nbins", minimum = 2L)
 
-  for (name in c("c0", "gamma", "alpha", "beta", "precision")) {
+  for (name in c("c0", "gamma", "prior_split_prob")) {
     .boostpm_validate_scalar(get(name), name)
   }
 
@@ -146,16 +144,11 @@
   if (gamma < 0) {
     .boostpm_stop_invalid("`gamma` must be greater than or equal to 0.")
   }
-  if (alpha < 0 || alpha > 1) {
-    .boostpm_stop_invalid("`alpha` must be between 0 and 1, inclusive.")
+  if (prior_split_prob < 0 || prior_split_prob > 1) {
+    .boostpm_stop_invalid(
+      "`prior_split_prob` must be between 0 and 1, inclusive."
+    )
   }
-  if (beta < 0) {
-    .boostpm_stop_invalid("`beta` must be greater than or equal to 0.")
-  }
-  if (precision <= 0) {
-    .boostpm_stop_invalid("`precision` must be greater than 0.")
-  }
-
   if (!is.null(early_stop)) {
     if (!is.numeric(early_stop) || length(early_stop) != 2L ||
         any(!is.finite(early_stop))) {

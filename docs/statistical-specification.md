@@ -298,33 +298,58 @@ for active interval ([a,b]). Values in ([a-\varepsilon_A,a)) are replaced by
 residual is retained for later allocation and residualization. Values farther
 outside the interval raise an error before indexing.
 
-### 8.2 Tree-structure prior implemented in code
+### 8.2 Tree-structure prior
 
-At depth (h\), the code uses split probability
+**confirmed from the archived code**
+
+At depth (h\), the archived implementation uses split probability
 
 $$
 p_{\mathrm{split}}(h)=\alpha(h+1)^{-\beta}.
 $$
 
-Conditional on splitting, active dimensions and grid locations have uniform prior weights.
+The archived R comments omit the minus sign on (\beta). The C++ expression
+above is the implemented archived behavior.
 
-The R comments omit the minus sign on (\beta). The C++ expression above is the implemented behavior.
+**approved package decision**
+
+The package removes the unreported depth-decay extension and exposes the
+constant prior split probability
+
+$$
+p_{\mathrm{split}}=\mathtt{prior\_split\_prob}.
+$$
+
+Its default is 0.9, matching the archived default and public experiment code.
+The value 0.5 corresponds to the constant split prior implied by the 0.5
+stopping probability stated in Appendix C of the paper. Conditional on
+splitting, active dimensions and grid locations have uniform prior weights.
 
 ### 8.3 Auxiliary beta prior
 
-For candidate geometric fraction (L), the code uses
+**confirmed from Appendix C.2.1--C.2.2**
+
+For candidate geometric fraction (L), the paper specifies
 
 $$
 \widetilde\theta_A\sim
-\mathrm{Beta}(\tau L,\tau(1-L)),
+\mathrm{Beta}(L,1-L).
 $$
 
-where `tau = precision`. This auxiliary random measure is used to integrate the node likelihood and choose a tree structure. It is not the final fitted mass (q_A).
+The archived code generalizes this to
+`Beta(precision * L, precision * (1 - L))`, but the public experiment code
+always sets `precision = 1`.
+
+**approved package decision**
+
+The package fixes this precision at one and does not expose it as a fitting
+control. This auxiliary random measure is used to integrate the node likelihood
+and choose a tree structure. It is not the final fitted mass (q_A).
 
 For node counts (n_l,n_r), the candidate's likelihood ratio relative to uniformity is proportional to
 
 $$
-\frac{B(\tau L+n_l,\tau(1-L)+n_r)}{B(\tau L,\tau(1-L))}
+\frac{B(L+n_l,1-L+n_r)}{B(L,1-L)}
 L^{-n_l}(1-L)^{-n_r}.
 $$
 
@@ -617,10 +642,13 @@ convention remains covered by the separate characterization suite.
 
 These are archived software defaults. They are not all the settings reported in the final paper.
 
-The package retains these defaults except that `max_n_var` has been removed.
-It validates `0 < c0 < 1`, `gamma >= 0`, `0 <= alpha <= 1`, `beta >= 0`, and
-`precision > 0`. `max_resol` retains the archived interpretation as the deepest
-splittable node, so leaves may occur at `max_resol + 1`.
+The package retains these numerical defaults except that `max_n_var` has been
+removed and the archived `alpha = 0.9, beta = 0` pair is represented by
+`prior_split_prob = 0.9`. It validates `0 < c0 < 1`, `gamma >= 0`,
+and `0 <= prior_split_prob <= 1`. The archived `precision = 1` setting is fixed
+internally and is no longer a fitting control. `max_resol` retains the archived
+interpretation as the deepest splittable node, so leaves may occur at
+`max_resol + 1`.
 
 ## 19. Paper and experiment settings
 
@@ -651,9 +679,9 @@ The density-estimation script uses or documents:
 - `early_stop = c(0, 50)`
 - `nbins = 100`, giving 99 code-level candidates
 - `max_n_var = d`
-- `alpha = 0.9`
-- `beta = 0`
-- `precision = 1`
+- archived `alpha = 0.9` and `beta = 0`, represented in the package as
+  `prior_split_prob = 0.9`
+- archived `precision = 1`, fixed internally in the package
 
 The script is not a locked execution environment and writes no result hashes.
 
@@ -661,11 +689,12 @@ The script is not a locked execution environment and writes no result hashes.
 
 | Topic | Paper | Original or experiment code | Status |
 |---|---|---|---|
-| Stop prior | Appendix C states `P(stop) = 0.5` | Code and experiment scripts use `alpha = 0.9`, hence depth-zero `P(stop) = 0.1` | unresolved methodological/numerical-setting conflict |
+| Stop prior | Appendix C states `P(stop) = 0.5` | Archived code and experiment scripts use `alpha = 0.9`, `beta = 0`, hence `P(stop) = 0.1`; the package exposes this as `prior_split_prob = 0.9` | unresolved published-reproduction setting; package API decision approved |
 | Split grid | Appendix C states 127 grid points | Experiment script uses `nbins = 100`, which creates 99 candidates | unresolved setting conflict |
 | Marginal tree cap | Main paper states 100 per dimension | Public experiment script sets 1000 | unresolved reproduction-setting conflict |
-| Split-depth prior | Appendix C gives constant stopping probability | Code generalizes to `alpha * (depth + 1)^(-beta)` | confirmed code extension; paper mapping incomplete |
-| Prior comment | Paper appendix does not use this comment | R comments show a positive `beta` exponent; C++ uses a negative exponent | documentation error in original code |
+| Split-depth prior | Appendix C gives constant stopping probability | Archived code generalizes to `alpha * (depth + 1)^(-beta)`; package removes `beta` and uses a constant prior | archived extension documented; package discrepancy resolved |
+| Auxiliary beta prior | Appendix C specifies `Beta(L, 1 - L)` | Archived code exposes a precision multiplier, but public experiments set it to 1; package fixes it at 1 | package discrepancy resolved |
+| Prior comment | Paper appendix does not use this comment | Archived R comments show a positive `beta` exponent; archived C++ uses a negative exponent | documentation error confined to original code |
 | Maximum depth | “maximum resolution” | Code can create leaves at `max_resol + 1` | unresolved convention / possible bug |
 | Split-point equality | Left child in the paper | Training sends equality right; evaluation sends equality left | possible bug |
 | Adaptive variable importance | Full empirical-measure formula | Subsample counts divided by full sample size | unresolved scaling difference |
@@ -803,7 +832,9 @@ Results and reproducibility levels are recorded in `docs/numerical-validation.md
 
 The following require user or author confirmation before changing behavior:
 
-- Whether the paper's `P(stop)=0.5` or the released code's `alpha=0.9` is the intended published setting.
+- Which setting should be used for an explicit paper-reproduction workflow:
+  Appendix C's `P(stop) = 0.5` or the public experiment code's constant
+  `prior_split_prob = 0.9`.
 - Whether the intended split grid has 127, 99, or another number of candidate points.
 - Whether the Section 3 marginal-tree cap is 100 or 1000.
 - Whether adaptive-stopping variable importance should be normalized by full or training-subsample size.

@@ -93,9 +93,7 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
       max_resol = 1,
       min_obs = 2,
       early_stop = NULL,
-      alpha = 1,
-      beta = 0,
-      precision = 1,
+      prior_split_prob = 1,
       nbins = 4
     )
   ))

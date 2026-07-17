@@ -91,7 +91,6 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
       early_stop = NULL,
       alpha = 1,
       beta = 0,
-      precision = 1,
       nbins = 4,
       max_n_var = 1
     )
@@ -135,4 +134,3 @@ testthat::test_that("small univariate fit reproduces the archived fixture", {
     tolerance = 1e-13
   )
 })
-

@@ -25,9 +25,7 @@ fit_small_archive_case <- function(seed = 20240714L) {
       max_resol = 1,
       min_obs = 2,
       early_stop = NULL,
-      alpha = 0.9,
-      beta = 0,
-      precision = 1,
+      prior_split_prob = 0.9,
       nbins = 4
     )
   ))
