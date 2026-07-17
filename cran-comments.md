@@ -1,11 +1,20 @@
+## Test environments
+
+* Local Windows 11 x64, R 4.5.2, `R CMD check --as-cran`.
+* GitHub Actions, Windows, R-release, `R CMD check --as-cran`.
+* GitHub Actions, macOS, R-release, `R CMD check --as-cran`.
+* GitHub Actions, Ubuntu, R-release, R-devel, and R-oldrel-1,
+  `R CMD check --as-cran`.
+
 ## R CMD check results
 
-* This is a new submission.
-* Local R CMD check --as-cran was run with R 4.5.0 on Windows 11 x64.
-  It completed with 0 errors and 0 warnings. The two notes were:
-  - the normal incoming note for a new submission;
-  - inability to verify the current time in the local check environment.
-* The PDF and HTML package manuals were generated successfully in the local
-  --as-cran check.
-* Continuous integration runs R CMD check on Windows, macOS, and Linux.
+0 errors | 0 warnings | 3 notes
 
+* This is a new submission.
+* The local check environment was unable to verify the current time.
+* The local HTML-manual check skipped math-rendering verification because the
+  optional V8 package was unavailable. The HTML and PDF manuals were generated
+  successfully.
+
+All five GitHub Actions jobs completed successfully. The local check also
+completed all examples, tests, vignette rebuilding, and manual generation.
