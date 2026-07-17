@@ -75,36 +75,56 @@ difficult to describe with a single parametric family.
 
 This vignette considers two distributions on the unit square:
 
-1. a sinusoidal conditional-density ridge;
-2. a curved conditionally bimodal density.
+1. a product of two beta distributions;
+2. a sinusoidal conditional-density ridge.
 
 For each example, we fit an ensemble, evaluate its density on a grid, and draw
 new observations from the fitted distribution.
 
 ## Simulated training data
 
-Observations occupy rows and variables occupy columns. Both examples use
-2,400 observations. The larger sample produces smoother fitted densities while
-remaining practical for routine package checks.
+Observations occupy rows and variables occupy columns. Both examples use 2,400
+training observations and remain practical for routine package checks.
 
-### Scenario 1: sinusoidal ridge
+### Scenario 1: independent beta variables
+
+The first coordinate follows a beta distribution concentrated toward the lower
+boundary, while the second is concentrated toward the upper boundary. The
+coordinates are independent, giving a simple parametric reference case with an
+analytic joint density.
+
+```{r beta-data}
+library(boostPM)
+
+n_beta <- 2400L
+n_sinusoidal <- 2400L
+support <- cbind(c(0, 0), c(1, 1))
+
+set.seed(11001)
+beta_data <- cbind(
+  x1 = rbeta(n_beta, shape1 = 2, shape2 = 5),
+  x2 = rbeta(n_beta, shape1 = 5, shape2 = 2)
+)
+
+beta_density <- function(x1, x2) {
+  dbeta(x1, shape1 = 2, shape2 = 5) *
+    dbeta(x2, shape1 = 5, shape2 = 2)
+}
+```
+
+### Scenario 2: sinusoidal ridge
 
 The first coordinate is uniform. The conditional mean of the second coordinate
 follows a sine wave. This produces nonlinear dependence that is not well
 represented by an elliptical distribution.
 
 ```{r sinusoidal-data}
-library(boostPM)
-
-n_training <- 2400L
-support <- cbind(c(0, 0), c(1, 1))
-
-set.seed(11001)
-x1 <- runif(n_training)
+set.seed(12001)
+x1 <- runif(n_sinusoidal)
 mu <- 0.15 + 0.70 * (0.5 + 0.5 * sin(2 * pi * x1))
 concentration <- 40
 x2 <- rbeta(
-  n_training,
+  n_sinusoidal,
   mu * concentration,
   (1 - mu) * concentration
 )
@@ -116,47 +136,10 @@ sinusoidal_density <- function(x1, x2) {
 }
 ```
 
-### Scenario 2: curved bimodality
-
-Two conditional beta ridges move toward one another as the first coordinate
-increases. The distribution combines nonlinear dependence with conditional
-bimodality.
-
-```{r curved-data}
-set.seed(12001)
-x1 <- runif(n_training)
-component <- rbinom(n_training, size = 1L, prob = 0.5)
-mu_lower <- 0.15 + 0.45 * x1^2
-mu_upper <- 0.85 - 0.45 * x1^2
-mu <- ifelse(component == 0L, mu_lower, mu_upper)
-concentration_curved <- 50
-x2 <- rbeta(
-  n_training,
-  mu * concentration_curved,
-  (1 - mu) * concentration_curved
-)
-curved_data <- cbind(x1 = x1, x2 = x2)
-
-curved_density <- function(x1, x2) {
-  mu_lower <- 0.15 + 0.45 * x1^2
-  mu_upper <- 0.85 - 0.45 * x1^2
-  0.5 * dbeta(
-    x2,
-    mu_lower * concentration_curved,
-    (1 - mu_lower) * concentration_curved
-  ) +
-    0.5 * dbeta(
-      x2,
-      mu_upper * concentration_curved,
-      (1 - mu_upper) * concentration_curved
-    )
-}
-```
-
 ```{r training-data-plot, fig.width=7, fig.height=3.6}
 old_par <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+draw_points(beta_data, "Independent beta variables")
 draw_points(sinusoidal_data, "Sinusoidal ridge")
-draw_points(curved_data, "Curved bimodality")
 par(old_par)
 ```
 
@@ -171,10 +154,10 @@ recent 50 validation improvements.
 The caps are upper limits. Adaptive stopping will usually select substantially
 fewer trees.
 
-```{r fit-sinusoidal}
+```{r fit-beta}
 set.seed(31001)
-fit_sinusoidal <- fit_boostpm(
-  sinusoidal_data,
+fit_beta <- fit_boostpm(
+  beta_data,
   add_noise = FALSE,
   Omega = support,
   ntree_max_marginal = 100,
@@ -191,10 +174,10 @@ fit_sinusoidal <- fit_boostpm(
 )
 ```
 
-```{r fit-curved}
+```{r fit-sinusoidal}
 set.seed(32001)
-fit_curved <- fit_boostpm(
-  curved_data,
+fit_sinusoidal <- fit_boostpm(
+  sinusoidal_data,
   add_noise = FALSE,
   Omega = support,
   ntree_max_marginal = 100,
@@ -220,15 +203,15 @@ seed and runtime provide the intended reproducibility level for a fit.
 messages are useful. The fitted object supports standard S3 methods.
 
 ```{r inspect}
-print(fit_sinusoidal)
-summary(fit_curved)
+print(fit_beta)
+summary(fit_sinusoidal)
 ```
 
 Variable-importance, tree-size, and maximum-depth plots are available through
 `plot()`.
 
 ```{r variable-importance, fig.width=6.5, fig.height=4.5}
-plot(fit_curved, type = "variable_importance")
+plot(fit_sinusoidal, type = "variable_importance")
 ```
 
 ## Evaluate the fitted densities
@@ -246,22 +229,22 @@ evaluation_grid <- as.matrix(expand.grid(
   x2 = x2_grid
 ))
 
+fitted_beta <- predict(
+  fit_beta,
+  evaluation_grid,
+  type = "density"
+)
 fitted_sinusoidal <- predict(
   fit_sinusoidal,
   evaluation_grid,
   type = "density"
 )
-fitted_curved <- predict(
-  fit_curved,
-  evaluation_grid,
-  type = "density"
-)
 
-true_sinusoidal <- sinusoidal_density(
+true_beta <- beta_density(
   evaluation_grid[, 1],
   evaluation_grid[, 2]
 )
-true_curved <- curved_density(
+true_sinusoidal <- sinusoidal_density(
   evaluation_grid[, 1],
   evaluation_grid[, 2]
 )
@@ -270,19 +253,38 @@ true_curved <- curved_density(
 The true and fitted panels share a color scale within each scenario. Values
 above the scenario-specific 99th percentile are clipped for display only.
 
-```{r density-comparison, fig.width=9, fig.height=6.1}
+```{r density-comparison, fig.width=9, fig.height=7}
+beta_cap <- as.numeric(stats::quantile(
+  c(true_beta, fitted_beta),
+  0.99,
+  names = FALSE
+))
 sinusoidal_cap <- as.numeric(stats::quantile(
   c(true_sinusoidal, fitted_sinusoidal),
   0.99,
   names = FALSE
 ))
-curved_cap <- as.numeric(stats::quantile(
-  c(true_curved, fitted_curved),
-  0.99,
-  names = FALSE
-))
 
-old_par <- par(mfrow = c(2, 3), mar = c(3.5, 3.5, 2.8, 0.8))
+old_par <- par(
+  mfrow = c(2, 3),
+  mar = c(4.5, 4.2, 2.8, 0.8),
+  mgp = c(2.6, 0.8, 0)
+)
+draw_points(beta_data, "Training: beta")
+draw_density(
+  x1_grid,
+  x2_grid,
+  true_beta,
+  "True density",
+  beta_cap
+)
+draw_density(
+  x1_grid,
+  x2_grid,
+  fitted_beta,
+  "Fitted density",
+  beta_cap
+)
 draw_points(sinusoidal_data, "Training: sinusoidal")
 draw_density(
   x1_grid,
@@ -298,75 +300,60 @@ draw_density(
   "Fitted density",
   sinusoidal_cap
 )
-draw_points(curved_data, "Training: bimodal")
-draw_density(
-  x1_grid,
-  x2_grid,
-  true_curved,
-  "True density",
-  curved_cap
-)
-draw_density(
-  x1_grid,
-  x2_grid,
-  fitted_curved,
-  "Fitted density",
-  curved_cap
-)
 par(old_par)
 ```
 
-The estimates recover the sinusoidal ridge and the two curved modes without
-specifying a parametric joint distribution. Local step-like contours reflect
-the tree-based representation.
+The estimates recover both the beta-product density and the nonlinear
+sinusoidal ridge. Local step-like contours reflect the tree-based
+representation.
 
 Points outside the support have log density `-Inf` and density zero.
 
 ```{r outside-support}
 outside <- rbind(c(-0.10, 0.50), c(0.50, 0.50), c(1.10, 0.50))
-predict(fit_curved, outside, type = "log_density")
+predict(fit_sinusoidal, outside, type = "log_density")
 ```
 
 ## Generate and compare samples
 
 The fitted ensemble is also a generative model. The following calls draw
-5,000 observations from each fit.
+1,000 observations from each fit.
 
 ```{r simulate}
 set.seed(41001)
-generated_sinusoidal <- simulate(fit_sinusoidal, nsim = 5000)
+generated_beta <- simulate(fit_beta, nsim = 1000)
 
 set.seed(42001)
-generated_curved <- simulate(fit_curved, nsim = 5000)
+generated_sinusoidal <- simulate(fit_sinusoidal, nsim = 1000)
 ```
 
 ```{r generated-joint-plot, fig.width=8, fig.height=7.2}
 old_par <- par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+draw_points(beta_data, "Training: beta")
+draw_points(
+  generated_beta,
+  "Generated: beta",
+  color = "#2166AC",
+  cex = 0.35
+)
 draw_points(sinusoidal_data, "Training: sinusoidal")
 draw_points(
   generated_sinusoidal,
   "Generated: sinusoidal",
   color = "#2166AC",
-  cex = 0.25
-)
-draw_points(curved_data, "Training: bimodal")
-draw_points(
-  generated_curved,
-  "Generated: bimodal",
-  color = "#2166AC",
-  cex = 0.25
+  cex = 0.35
 )
 par(old_par)
 ```
 
-The generated observations preserve the nonlinear joint structures visible in
-the training samples. Marginal empirical distribution functions provide a
-second comparison.
+The generated observations preserve the beta marginal shapes and the nonlinear
+sinusoidal structure visible in the training samples. Marginal empirical
+distribution functions provide a second comparison.
 
 ```{r marginal-comparison, fig.width=8, fig.height=7.2}
 data_pairs <- list(
-  list("Sinusoidal", sinusoidal_data, generated_sinusoidal),
-  list("Curved bimodality", curved_data, generated_curved)
+  list("Independent beta", beta_data, generated_beta),
+  list("Sinusoidal", sinusoidal_data, generated_sinusoidal)
 )
 
 old_par <- par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
